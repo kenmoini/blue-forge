@@ -1,0 +1,33 @@
+---
+- name: Configure Security Group Rule to open ports for SSH
+  ibm.cloudcollection.ibm_is_security_group_rule:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: available
+    group: "{{ vpc_create_output.resource.default_security_group }}"
+    direction: inbound
+    remote: 0.0.0.0/0
+    tcp:
+      - port_max: 22
+        port_min: 22
+
+- name: Configure Security Group Rule to open ports for Cockpit TCP
+  ibm.cloudcollection.ibm_is_security_group_rule:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: available
+    group: "{{ vpc_create_output.resource.default_security_group }}"
+    direction: inbound
+    remote: 0.0.0.0/0
+    tcp:
+      - port_max: 9090
+        port_min: 9090
+
+- name: Configure Security Group Rule to open ports for Cockpit UDP
+  ibm.cloudcollection.ibm_is_security_group_rule:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: available
+    group: "{{ vpc_create_output.resource.default_security_group }}"
+    direction: inbound
+    remote: 0.0.0.0/0
+    udp:
+      - port_max: 9090
+        port_min: 9090

@@ -1,0 +1,293 @@
+#############################################################################
+## Generate Security Groups
+
+resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_proctor_sg" {
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-proctor-sg"
+  vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+}
+
+resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_lb_sg" {
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-lb-sg"
+  vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+}
+
+resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_control_plane_sg" {
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-control-plane-sg"
+  vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+}
+
+resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_app_node_sg" {
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-app-node-sg"
+  vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+}
+
+resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_dns_sg" {
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-dns-sg"
+  vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+}
+
+#############################################################################
+## Set Outbound Allows on Security Groups
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_proctor_sg_out_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg.id
+  direction  = "outbound"
+  remote     = "0.0.0.0/0"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_lb_sg_out_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg.id
+  direction  = "outbound"
+  remote     = "0.0.0.0/0"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_control_plane_sg_out_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg.id
+  direction  = "outbound"
+  remote     = "0.0.0.0/0"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_app_node_sg_out_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_app_node_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_app_node_sg.id
+  direction  = "outbound"
+  remote     = "0.0.0.0/0"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_dns_sgr_out_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg.id
+  direction  = "outbound"
+  remote     = "0.0.0.0/0"
+}
+
+#############################################################################
+## Set Internal Allows on Security Groups
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_proctor_sg_int_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg.id
+  direction  = "inbound"
+  remote     = "10.0.0.0/8"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_lb_sg_int_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg.id
+  direction  = "inbound"
+  remote     = "10.0.0.0/8"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_control_plane_sg_int_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg.id
+  direction  = "inbound"
+  remote     = "10.0.0.0/8"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_app_node_sg_int_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_app_node_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_app_node_sg.id
+  direction  = "inbound"
+  remote     = "10.0.0.0/8"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_dns_sgr_int_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg.id
+  direction  = "inbound"
+  remote     = "10.0.0.0/8"
+}
+
+#############################################################################
+## Set Allows on Proctor Security Group
+
+{% if k8s_lb_tcp_port_rules is defined %}
+{% if k8s_lb_tcp_port_rules | length > 0 %}
+{% for port in k8s_lb_tcp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_proctor_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  tcp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if proctor_bastion_udp_port_rules is defined %}
+{% if proctor_bastion_udp_port_rules | length > 0 %}
+{% for port in proctor_bastion_udp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_proctor_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  udp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+#############################################################################
+## Set Allows on Load Balancer Security Group
+
+{% if k8s_lb_tcp_port_rules is defined %}
+{% if k8s_lb_tcp_port_rules | length > 0 %}
+{% for port in k8s_lb_tcp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_lb_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  tcp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if k8s_lb_udp_port_rules is defined %}
+{% if k8s_lb_udp_port_rules | length > 0 %}
+{% for port in k8s_lb_udp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_lb_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  udp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+#############################################################################
+## Set Allows on Control Plane Security Group
+
+{% if k8s_control_plane_tcp_port_rules is defined %}
+{% if k8s_control_plane_tcp_port_rules | length > 0 %}
+{% for port in k8s_control_plane_tcp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_control_plane_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  tcp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if k8s_control_plane_udp_port_rules is defined %}
+{% if k8s_control_plane_udp_port_rules | length > 0 %}
+{% for port in k8s_control_plane_udp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_control_plane_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  udp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+#############################################################################
+## Set Allows on App Node Security Group
+
+{% if k8s_app_node_tcp_port_rules is defined %}
+{% if k8s_app_node_tcp_port_rules | length > 0 %}
+{% for port in k8s_app_node_tcp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_app_node_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_app_node_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_app_node_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  tcp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if k8s_app_node_udp_port_rules is defined %}
+{% if k8s_app_node_udp_port_rules | length > 0 %}
+{% for port in k8s_app_node_udp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_app_node_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_app_node_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_app_node_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  udp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+#############################################################################
+## Set Allows on DNS Security Group
+
+{% if dns_node_tcp_port_rules is defined %}
+{% if dns_node_tcp_port_rules | length > 0 %}
+{% for port in dns_node_tcp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_dns_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  tcp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if dns_node_udp_port_rules is defined %}
+{% if dns_node_udp_port_rules | length > 0 %}
+{% for port in dns_node_udp_port_rules %}
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_dns_sgr_{{ port.name }}" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg ]
+  group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg.id
+  direction = "{{ port.direction }}"
+  remote    = "{{ port.remote }}"
+  udp {
+    port_min = {{ port.start }}
+    port_max = {{ port.end }}
+  }
+}
+{% endfor %}
+{% endif %}
+{% endif %}

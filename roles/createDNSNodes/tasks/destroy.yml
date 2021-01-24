@@ -1,0 +1,103 @@
+---
+- name: Get DNS Node Floating IP assets
+  ibm.cloudcollection.ibm_is_floating_ip_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-ns{{ item }}-fip"
+  register: dns_fip_info
+  ignore_errors: true
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+
+- name: Release DNS Node Floating IP
+  uri:
+    url: "{{ api_endpoint }}/v1/floating_ips/{{ item.resource.id }}?version=2021-01-12&generation=2"
+    method: DELETE
+    headers:
+      Accept: application/json
+      Authorization: "{{ ibm_api_token }}"
+    return_content: yes
+    status_code: [200, 204]
+  register: dns_fip_api
+  ignore_errors: yes
+  failed_when: dns_fip_api.status == 404
+  changed_when: dns_fip_api.status == 204
+  when: item.resource.id is defined and (dns_fip_info|length>0)
+  with_items: "{{ dns_fip_info.results }}"
+
+#- name: Release DNS Node Floating IP
+#  ibm.cloudcollection.ibm_is_floating_ip:
+#    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+#    region: "{{ region }}"
+#    state: absent
+#    id: "{{ item.resource.id }}"
+#  when: item.resource.id is defined
+#  with_items: "{{ dns_fip_info.results }}"
+
+- name: Get DNS Node VSI Information
+  ibm.cloudcollection.ibm_is_instance_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-ns{{ item }}-vsi"
+  register: dns_vsi_info
+  ignore_errors: true
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+
+- name: Remove DNS Node VSI
+  uri:
+    url: "{{ api_endpoint }}/v1/instances/{{ item.resource.id }}?version=2021-01-12&generation=2"
+    method: DELETE
+    headers:
+      Accept: application/json
+      Authorization: "{{ ibm_api_token }}"
+    return_content: yes
+    status_code: [200, 204]
+  register: dns_vsi_api
+  ignore_errors: yes
+  failed_when: >
+    dns_vsi_api.status == 404
+  changed_when: dns_vsi_api.status == 204
+  when: item.resource.id is defined and (dns_vsi_info|length>0)
+  with_items: "{{ dns_vsi_info.results }}"
+
+#- name: Remove DNS Node VSI
+#  ibm.cloudcollection.ibm_is_instance:
+#    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+#    region: "{{ region }}"
+#    state: absent
+#    id: "{{ item.resource.id }}"
+#    keys: []
+#  when: item.resource.id is defined
+#  with_items: "{{ dns_vsi_info.results }}"
+
+- name: Query Security Group for DNS Nodes
+  ibm.cloudcollection.ibm_is_security_group_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-dns-sg"
+  register: dns_security_group
+  ignore_errors: true
+
+- name: Remove Security Group for DNS Nodes
+  uri:
+    url: "{{ api_endpoint }}/v1/security_groups/{{ dns_security_group.resource.id }}?version=2021-01-12&generation=2"
+    method: DELETE
+    headers:
+      Accept: application/json
+      Authorization: "{{ ibm_api_token }}"
+    return_content: yes
+    status_code: [200, 204]
+  register: cp_sg_api
+  ignore_errors: yes
+  failed_when: >
+    cp_sg_api.status == 403 or
+    cp_sg_api.status == 404 or
+    cp_sg_api.status == 409
+  changed_when: cp_sg_api.status == 204
+  when: dns_security_group.resource.id is defined
+#- name: Remove Security Group for DNS Nodes
+#  ibm.cloudcollection.ibm_is_security_group:
+#    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+#    region: "{{ region }}"
+#    state: absent
+#    id: "{{ dns_security_group.resource.id }}"
+#  when: dns_security_group.resource.id is defined

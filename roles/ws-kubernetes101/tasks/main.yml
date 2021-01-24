@@ -1,0 +1,32 @@
+---
+# tasks file for ws-kubernetes101
+- name: Preflight checks
+  include_tasks: preflight.yml
+
+- name: Generate and sync SSH Key Pair
+  include_tasks: ssh_key.yml
+
+- name: Build out VPC and Subnet
+  include_tasks: vpc.yml
+
+- name: Load up Security Group
+  include_tasks: security_group.yml
+
+- name: Create Proctor Resources
+  include_tasks: proctor_bastion.yml
+
+- name: Create Workshop Student Seats - Load Balancers
+  include_tasks: create_student_seat_lb.yaml
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+
+- name: Create Workshop Student Seats - Control Plane Nodes
+  include_tasks: create_student_seat_k8s_control_plane.yaml
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: student_num
+
+- name: Create Workshop Student Seats - App Nodes
+  include_tasks: create_student_seat_k8s_app_node.yaml
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: student_num

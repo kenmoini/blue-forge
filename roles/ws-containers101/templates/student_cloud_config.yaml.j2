@@ -1,0 +1,20 @@
+#cloud-config
+users:
+  - name: {{ proctor_username }}
+    gecos: Workshop Proctor
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: wheel
+    ssh_import_id: None
+    lock_passwd: false
+    passwd: {{ generated_proctor_password_hash.stdout }}
+    ssh_authorized_keys:
+        - {{ new_ssh_key_pair.public_key }}
+  - name: {{ student_username_prefix }}{{ item }}{{ student_username_suffix }}
+    gecos: Student User {{ item }}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: wheel
+    ssh_import_id: None
+    lock_passwd: false
+    passwd: {{ generated_student_password_hash.stdout }}
+runcmd:
+  - [ dnf, update, -y ]

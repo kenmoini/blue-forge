@@ -1,0 +1,12 @@
+---
+# defaults file for localTerraform
+
+terraform_version: 0.14.4
+terraform_arch: amd64
+terraform_os: linux
+
+terraform_url: "https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_{{ terraform_os }}_{{ terraform_arch }}.zip"
+
+generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
+
+bin_directory: "{{ generation_directory }}/bin"

@@ -1,0 +1,9 @@
+---
+# defaults file for kenmoini.cockpit
+base_cockpit_packages:
+  - cockpit
+  - cockpit-ws
+  - cockpit-dashboard
+  - cockpit-bridge
+  - cockpit-system
+  - cockpit-packagekit

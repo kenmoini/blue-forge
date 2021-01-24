@@ -1,0 +1,58 @@
+---
+- name: "Create Workshop Student Load Balancer VSI for seat {{ item }}"
+  ibm.cloudcollection.ibm_is_instance:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-lb-vsi"
+    state: available
+    vpc: "{{ vpc_create_output.resource.id }}"
+    profile: "{{ student_vsi_lb_node_profile }}"
+    image: "{{ image_dict[student_vsi_image] }}"
+    boot_volume:
+      - name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-lb-bootvol"
+    keys:
+      - "{{ ssh_key_create_output.resource.id }}"
+    primary_network_interface:
+      - subnet: "{{ subnet_create_output.resource.id }}"
+        security_groups:
+          - "{{ k8s_lb_security_group.resource.id }}"
+    user_data: "{{ lookup('template', 'templates/lb_cloud_config.yaml.j2') }}"
+    zone: "{{ regional_zone }}"
+    tags:
+      - "assetID:student-{{ item }}-lb-vsi"
+      - "assetGroup:student-lb-vsi"
+      - "assetType:vsi"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: student_lb_vsi_create_output
+
+- name: "Create Workshop Student Floating IP for Load Balancer VSI for seat {{ item }}"
+  ibm.cloudcollection.ibm_is_floating_ip:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-lb-fip"
+    state: available
+    target: "{{ student_lb_vsi_create_output.resource.primary_network_interface[0]['id'] }}"
+    tags:
+      - "assetID:student-{{ item }}-lb-fip"
+      - "assetGroup:student-lb-fip"
+      - "assetType:fip"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: student_lb_fip_create_output
+
+- name: Add Student Seat Load Balancer to student_vsi, student_lb_vsi, and workshop_vsi groups
+  add_host:
+    name: "{{ student_lb_fip_create_output.resource.address }}"
+    ansible_user: root
+    groups:
+      - student_vsi
+      - student_lb_vsi
+      - workshop_vsi
+      - ext_workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_fqdn: "student{{ item }}.{{ guid }}.{{ domain }}"
+    ansible_set_hostname: "student{{ item }}"
+    ansible_external_ip: "{{ student_lb_fip_create_output.resource.address }}"
+    ansible_internal_ip: "{{ student_lb_vsi_create_output.resource.primary_network_interface[0]['primary_ipv4_address'] }}"

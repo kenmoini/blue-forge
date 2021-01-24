@@ -1,0 +1,45 @@
+#cloud-config
+users:
+  - name: {{ proctor_username }}
+    gecos: Workshop Proctor
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: wheel
+    ssh_import_id: None
+    lock_passwd: false
+    passwd: {{ generated_proctor_password_hash.stdout }}
+    ssh_authorized_keys:
+        - {{ new_ssh_key_pair.public_key }}
+  - name: {{ student_username_prefix }}{{ studentNum }}{{ student_username_suffix }}
+    gecos: Student User {{ studentNum }}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: wheel
+    ssh_import_id: None
+    lock_passwd: false
+    passwd: {{ generated_student_password_hash.stdout }}
+{% if rh_subscription|bool %}
+rh_subscription:
+  {% if rh_subscription_username is defined %}
+  username: {{ rh_subscription_username }}
+  {% endif %}
+  {% if rh_subscription_password is defined %}
+  password: {{ rh_subscription_password }}
+  {% endif %}
+  {% if rh_subscription_auto_attach is defined %}
+  auto-attach: {{ rh_subscription_auto_attach|bool }}
+  {% endif %}
+  {% if rh_subscription_service_level is defined %}
+  service-level: {{ rh_subscription_service_level }}
+  {% endif %}
+  {% if rh_subscription_activation_key is defined %}
+  activation-key: {{ rh_subscription_activation_key }}
+  {% endif %}
+  {% if rh_subscription_organization_id is defined %}
+  org: {{ rh_subscription_organization_id }}
+  {% endif %}
+  {% if rh_subscription_pool_id is defined %}
+  add-pool: {{ rh_subscription_pool_id }}
+  {% endif %}
+  {% if rh_subscription_server_hostname is defined %}
+  server-hostname: {{ rh_subscription_server_hostname }}
+  {% endif %}
+{% endif %}

@@ -1,0 +1,18 @@
+---
+# tasks file for localTerraform
+- name: Create Generation Directory
+  file:
+    path: "{{ bin_directory }}"
+    state: directory
+
+- name: Download and Unzip Terraform
+  ansible.builtin.unarchive:
+    src: "{{ terraform_url }}"
+    dest: "{{ bin_directory }}"
+    mode: 0755
+    remote_src: yes
+
+- name: Set Terraform path
+  set_fact:
+    bin_directory: "{{ bin_directory }}"
+    terraform_path: "{{ bin_directory }}/terraform"

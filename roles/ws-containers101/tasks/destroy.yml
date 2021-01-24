@@ -1,0 +1,104 @@
+---
+- name: Get Student Floating IP assets
+  ibm.cloudcollection.ibm_is_floating_ip_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-fip"
+  register: student_fip_info
+  ignore_errors: true
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+
+- name: Release Student Floating IP
+  ibm.cloudcollection.ibm_is_floating_ip:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: absent
+    id: "{{ item.resource.id }}"
+  when: item.resource.id is defined and (student_fip_info|length>0)
+  with_items: "{{ student_fip_info.results }}"
+
+- name: Get Student VSI Information
+  ibm.cloudcollection.ibm_is_instance_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-vsi"
+  register: student_vsi_info
+  ignore_errors: true
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+
+- name: Remove Student VSIs
+  ibm.cloudcollection.ibm_is_instance:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: absent
+    id: "{{ item.resource.id }}"
+    keys: []
+  when: item.resource.id is defined and (student_vsi_info|length>0)
+  with_items: "{{ student_vsi_info.results }}"
+
+- name: Get Proctor Floating IP asset
+  ibm.cloudcollection.ibm_is_floating_ip_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-pb-fip"
+  register: pb_fip_info
+  ignore_errors: true
+
+- name: Release Proctor Floating IP
+  ibm.cloudcollection.ibm_is_floating_ip:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: absent
+    id: "{{ pb_fip_info.resource.id }}"
+  when: pb_fip_info.resource.id is defined
+
+- name: Get Proctor VSI Information
+  ibm.cloudcollection.ibm_is_instance_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-pb-vsi"
+  register: pb_vsi_info
+  ignore_errors: true
+
+- name: Remove Proctor VSI
+  ibm.cloudcollection.ibm_is_instance:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: absent
+    id: "{{ pb_vsi_info.resource.id }}"
+    keys: []
+  when: pb_vsi_info.resource.id is defined
+
+- name: Get the SSH Key
+  ibm.cloudcollection.ibm_is_ssh_key_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-ssh-key"
+  register: ssh_key_output
+  ignore_errors: true
+
+- name: Remove SSH Key
+  ibm.cloudcollection.ibm_is_ssh_key:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: absent
+    id: "{{ ssh_key_output.resource.id }}"
+  when: ssh_key_output.resource.id is defined
+
+- name: Get the VPC Subnet info
+  ibm.cloudcollection.ibm_is_subnet_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-subnet"
+  register: subnet_info
+  ignore_errors: true
+
+- name: Remove VPC Subnet
+  ibm.cloudcollection.ibm_is_subnet:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: absent
+    id: "{{ subnet_info.resource.id }}"
+  when: subnet_info.resource.id is defined
+
+- name: Get the VPC details
+  ibm.cloudcollection.ibm_is_vpc_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-vpc"
+  register: vpc_output
+  ignore_errors: true
+
+- name: Remove VPC
+  ibm.cloudcollection.ibm_is_vpc:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    state: absent
+    id: "{{ vpc_output.resource.id }}"
+  when: vpc_output.resource.id is defined

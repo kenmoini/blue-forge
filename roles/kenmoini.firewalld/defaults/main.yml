@@ -1,0 +1,3 @@
+---
+# defaults file for kenmoini.firewalld
+#force_restart_of_firewalld: false

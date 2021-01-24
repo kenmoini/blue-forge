@@ -1,0 +1,335 @@
+---
+- name: Preflight checks
+  include_tasks: preflight.yml
+
+- name: Check for terraform.tfstate file
+  stat:
+    path: "{{ tfile_dir }}/terraform.tfstate"
+  register: check_terraform_state
+
+- name: Check for state of terraform.tfstate file lol
+  shell:
+    cmd: "wc -l {{ tfile_dir }}/terraform.tfstate | cut -d ' ' -f 1"
+  when: check_terraform_state.stat.exists
+  register: state_size_check
+
+- name: Set fact for template recration
+  set_fact:
+    recreate_templates: "{{ 'no' if ((check_terraform_state.stat.exists) and (state_size_check.stdout|int > 10)) else 'yes' }}"
+
+- name: Delete terraform template directory
+  file:
+    path: "{{ tfile_dir }}"
+    state: absent
+  when: recreate_templates|bool
+
+- name: Create terraform template directory
+  file:
+    path: "{{ tfile_dir }}"
+    state: directory
+
+- name: Create terraform cloud init template directory
+  file:
+    path: "{{ tfile_dir }}/cloud_inits"
+    state: directory
+
+- name: Create SSH Key
+  community.crypto.openssh_keypair:
+    path: "{{ generation_directory }}/id_ssh_rsa"
+    size: 4096
+    type: rsa
+  register: new_ssh_key_pair
+  tags:
+    - template_terraform
+    - generate_keys
+
+- name: Create Public SSH Key file
+  copy:
+    content: "{{ new_ssh_key_pair.public_key }}"
+    dest: "{{ generation_directory }}/id_ssh_rsa.pub"
+  tags:
+    - template_terraform
+    - generate_keys
+
+- name: Template out version.tf
+  template:
+    src: terraform/version.tf.j2
+    dest: "{{ tfile_dir }}/version.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out variables.tf
+  template:
+    src: terraform/variables.tf.j2
+    dest: "{{ tfile_dir }}/variables.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out credentials.tf
+  template:
+    src: terraform/credentials.tf.j2
+    dest: "{{ tfile_dir }}/credentials.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out global_data.tf
+  template:
+    src: terraform/global_data.tf.j2
+    dest: "{{ tfile_dir }}/global_data.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out ssh_key.tf
+  template:
+    src: terraform/ssh_key.tf.j2
+    dest: "{{ tfile_dir }}/ssh_key.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out vpc.tf
+  template:
+    src: terraform/vpc.tf.j2
+    dest: "{{ tfile_dir }}/vpc.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out security_groups.tf
+  template:
+    src: terraform/security_groups.tf.j2
+    dest: "{{ tfile_dir }}/security_groups.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out Proctor Bastion Cloud Init Config
+  template:
+    src: terraform/cloud_inits/proctor_bastion.yaml.j2
+    dest: "{{ tfile_dir }}/cloud_inits/proctor_bastion.yaml"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out proctor_bastion.tf
+  template:
+    src: terraform/proctor_bastion.tf.j2
+    dest: "{{ tfile_dir }}/proctor_bastion.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out DNS Cloud Init Config
+  template:
+    src: terraform/cloud_inits/dns_nodes.yaml.j2
+    dest: "{{ tfile_dir }}/cloud_inits/dns_node{{ nodeNum }}.yaml"
+  when: recreate_templates|bool
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+  loop_control:
+    loop_var: nodeNum
+  tags:
+    - template_terraform
+
+- name: Template out dns_nodes.tf
+  template:
+    src: terraform/dns_nodes.tf.j2
+    dest: "{{ tfile_dir }}/dns_node{{ nodeNum }}.tf"
+  when: recreate_templates|bool
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+  loop_control:
+    loop_var: nodeNum
+  tags:
+    - template_terraform
+
+- name: Template out K8s LB Cloud Init Config
+  template:
+    src: terraform/cloud_inits/k8s_lb_nodes.yaml.j2
+    dest: "{{ tfile_dir }}/cloud_inits/student{{ studentNum }}-k8s_lb_node.yaml"
+  when: recreate_templates|bool
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: studentNum
+  tags:
+    - template_terraform
+
+- name: Template out k8s_lb_nodes.tf
+  template:
+    src: terraform/k8s_lb_nodes.tf.j2
+    dest: "{{ tfile_dir }}/student{{ studentNum }}-k8s_lb_node.tf"
+  when: recreate_templates|bool
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: studentNum
+  tags:
+    - template_terraform
+
+- name: Template out k8s_app_nodes.tf
+  include_tasks: tf_create_student_seat_k8s_app_node_templates.yaml
+  when: recreate_templates|bool
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: studentNum
+  tags:
+    - template_terraform
+
+- name: Template out k8s_control_plane_nodes.tf
+  include_tasks: tf_create_student_seat_k8s_control_plane_templates.yaml
+  when: recreate_templates|bool
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: studentNum
+  tags:
+    - template_terraform
+
+- name: Template out main.tf
+  template:
+    src: terraform/main.tf.j2
+    dest: "{{ tfile_dir }}/main.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Run Terraform
+  community.general.terraform:
+    project_path: "{{ tfile_dir }}"
+    state: present
+    force_init: true
+    binary_path: "{{ terraform_path }}"
+    variables:
+      ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+  register: terraform_result
+  delay: 3
+  retries: 3
+  until: terraform_result is not failed
+  tags:
+    - run_terraform
+
+- name: Pause for 15 seconds for the cloud to catch up to the Terraform
+  pause:
+    seconds: 15
+
+- name: Pull in terraform state file
+  include_vars: 
+    file: "{{ tfile_dir }}/terraform.tfstate"
+    name: tfstate
+  when: not recreate_templates|bool
+
+#- name: Find Resource - "{{ workshop_shortcode }}_{{ guid }}_pb_vsi"
+#  debug:
+#    msg: "{{ tfstate.resources[0] }}"
+
+- name: Filter and find needed information
+  set_fact:
+    proctor_bastion_vsi_state: "{{ tfstate | community.general.json_query(proctor_bastion_vsi_jq) | community.general.json_query(vsi_filter) }}"
+    proctor_bastion_fip_state: "{{ tfstate | community.general.json_query(proctor_bastion_fip_jq) | community.general.json_query(fip_filter) }}"
+
+    dns_vsi_state: "{{ tfstate | community.general.json_query(proctor_bastion_vsi_jq) | community.general.json_query(vsi_filter) }}"
+    dns_fip_state: "{{ tfstate | community.general.json_query(proctor_bastion_fip_jq) | community.general.json_query(fip_filter) }}"
+
+    student_lb_vsi_state: "{{ tfstate | community.general.json_query(proctor_bastion_vsi_jq) | community.general.json_query(lb_filter) | community.general.json_query(vsi_filter) }}"
+    student_lb_fip_state: "{{ tfstate | community.general.json_query(proctor_bastion_fip_jq) | community.general.json_query(lb_filter) | community.general.json_query(fip_filter) }}"
+  vars:
+    vsi_filter: "[?type=='ibm_is_instance'].instances[0].attributes.primary_network_interface[0].primary_ipv4_address"
+    fip_filter: "[?type=='ibm_is_floating_ip'].instances[0].attributes.address"
+    lb_filter: "[?name.contains(@,'_lb_')]"
+
+    proctor_bastion_fip_jq: "resources[?name=='{{ workshop_shortcode }}_{{ guid }}_pb_fip']"
+    proctor_bastion_vsi_jq: "resources[?name=='{{ workshop_shortcode }}_{{ guid }}_pb_vsi']"
+
+    dns_fip_jq: "resources[?name.contains(@,''{{ workshop_shortcode }}_{{ guid }}_ns')]"
+    dns_vsi_jq: "resources[?name.contains(@,''{{ workshop_shortcode }}_{{ guid }}_ns')]"
+
+    student_lb_fip_jq: "resources[?name.contains(@,''{{ workshop_shortcode }}_{{ guid }}_student')]"
+    student_lb_vsi_jq: "resources[?name.contains(@,''{{ workshop_shortcode }}_{{ guid }}_student')]"
+  when: not recreate_templates|bool
+
+#- name: Find Proctor Bastion VSI Object
+#  ibm.cloudcollection.ibm_is_instance_info:
+#    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+#    region: "{{ region }}"
+#    name: "{{ workshop_shortcode }}-{{ guid }}-pb-vsi"
+#  register: pb_vsi_create_output
+#  tags:
+#    - proctor_bastion
+#
+#- name: Find Proctor Bastion FIP Object
+#  ibm.cloudcollection.ibm_is_floating_ip_info:
+#    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+#    region: "{{ region }}"
+#    name: "{{ workshop_shortcode }}-{{ guid }}-pb-fip"
+#  register: pb_fip_create_output
+#  tags:
+#    - proctor_bastion
+
+- name: Add Proctor Bastion VSI to Ansible inventory
+  add_host:
+    name: "{{ proctor_bastion_fip_state | first }}"
+    ansible_user: root
+    groups:
+      - pb_vsi
+      - workshop_vsi
+      - ext_workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_hostname: "bastion"
+    ansible_set_fqdn: "bastion.{{ guid }}.{{ domain }}"
+    #ansible_external_ip: "{{ pb_fip_create_output.resource.address }}"
+    ansible_external_ip: "{{ proctor_bastion_fip_state | first }}"
+    #ansible_internal_ip: "{{ pb_vsi_create_output.resource.primary_network_interface[0]['primary_ipv4_address'] }}"
+    ansible_internal_ip: "{{ proctor_bastion_vsi_state | first }}"
+  tags:
+    - proctor_bastion
+
+
+#- name: Add Student Seat Load Balancer to student_vsi, student_lb_vsi, and workshop_vsi groups
+#  add_host:
+#    name: "{{ student_lb_fip_create_output.resource.address }}"
+#    ansible_user: root
+#    groups:
+#      - student_vsi
+#      - student_lb_vsi
+#      - workshop_vsi
+#      - ext_workshop_vsi
+#      - internal_workshop_vsi
+#    ansible_ssh_user: root
+#    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+#    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+#    ansible_set_fqdn: "student{{ item }}.{{ guid }}.{{ domain }}"
+#    ansible_set_hostname: "student{{ item }}"
+#    ansible_external_ip: "{{ student_lb_fip_create_output.resource.address }}"
+#    ansible_internal_ip: "{{ student_lb_vsi_create_output.resource.primary_network_interface[0]['primary_ipv4_address'] }}"
+#  with_items: "{{ "
+
+- name: Include Workshop Student Seats - Load Balancers
+  include_tasks: lookup_student_seat_lb.yaml
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  tags:
+    - student_lbs
+
+- name: Include Workshop Student Seats - Control Plane Nodes
+  include_tasks: lookup_student_seat_k8s_control_plane.yaml
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: student_num
+  tags:
+    - student_cps
+
+- name: Include Workshop Student Seats - App Nodes
+  include_tasks: lookup_student_seat_k8s_app_node.yaml
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: student_num
+  tags:
+    - student_apps
+
+- name: Include Workshop DNS Nodes
+  include_tasks: lookup_dns_nodes.yaml
+  with_sequence: start=1 end="{{ student_count }}" stride=1
+  tags:
+    - dns_nodes

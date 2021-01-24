@@ -1,0 +1,14 @@
+---
+- name: Tear down Containers 101 Workshop
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - ibm.cloudcollection
+
+  tasks:
+    - name: Remove infrastructure from IBM Cloud
+      include_role:
+        name: ws-containers101
+        tasks_from: destroy
+      vars:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"

@@ -1,0 +1,59 @@
+---
+- name: Create DNS VSI
+  ibm.cloudcollection.ibm_is_instance:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-ns{{ item }}-vsi"
+    state: available
+    vpc: "{{ vpc_create_output.resource.id }}"
+    profile: "{{ dns_vsi_profile }}"
+    image: "{{ image_dict[dns_vsi_image] }}"
+    boot_volume:
+      - name: "{{ workshop_shortcode }}-{{ guid }}-ns{{ item }}-bootvol"
+    keys:
+      - "{{ ssh_key_create_output.resource.id }}"
+    primary_network_interface:
+      - subnet: "{{ subnet_create_output.resource.id }}"
+        security_groups:
+          - "{{ dns_security_group.resource.id }}"
+    zone: "{{ regional_zone }}"
+    user_data: "{{ lookup('template', 'templates/cloud_config.yml.j2') }}"
+    tags:
+      - "assetID:dns-ns{{ item }}-vsi"
+      - "assetGroup:dns-vsi"
+      - "assetType:vsi"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: dns_vsi_create_output
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+
+- name: Attach Floating IP to DNS VSI
+  ibm.cloudcollection.ibm_is_floating_ip:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-ns{{ item }}-fip"
+    state: available
+    target: "{{ dns_vsi_create_output.results[(item|int - 1)].resource.primary_network_interface[0]['id'] }}"
+    tags:
+      - "assetID:dns-ns{{ item }}-fip"
+      - "assetGroup:dns-fip"
+      - "assetType:fip"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: dns_fip_create_output
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+
+- name: Add DNS VSI to Ansible inventory
+  add_host:
+    name: "{{ dns_fip_create_output.results[(item|int - 1)].resource.address }}"
+    ansible_user: root
+    groups:
+      - dns_vsi
+      - workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_hostname: "ns{{ item }}-{{ guid }}"
+    ansible_set_fqdn: "ns{{ item }}-{{ guid }}.{{ domain }}"
+    ansible_external_ip: "{{ dns_fip_create_output.results[(item|int - 1)].resource.address }}"
+    ansible_internal_ip: "{{ dns_vsi_create_output.results[(item|int - 1)].resource.primary_network_interface[0]['primary_ipv4_address'] }}"
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1

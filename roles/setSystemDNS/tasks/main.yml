@@ -1,0 +1,38 @@
+---
+# tasks file for setSystemDNS
+
+#- name: make sure line 'dns=none' is set in /etc/NetworkManager/NetworkManager.conf
+#  ini_file:
+#    path: /etc/NetworkManager/NetworkManager.conf
+#    state: present
+#    no_extra_spaces: yes
+#    section: main
+#    option: dns
+#    value: none
+#    owner: root
+#    group: root
+#    mode: 0644
+#    backup: yes
+#  notify:
+#    - reload NetworkManager
+
+- name: Create no dns rule for NetworkManager
+  copy:
+    src: files/99-no-dns.conf
+    dest: /etc/NetworkManager/conf.d/99-no-dns.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - reload NetworkManager
+
+- name: Deploy resolv.conf template
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: 0644
+    backup: yes
+  notify:
+    - reload NetworkManager

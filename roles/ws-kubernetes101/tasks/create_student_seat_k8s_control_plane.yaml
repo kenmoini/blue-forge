@@ -1,0 +1,47 @@
+---
+- name: "Create Workshop Student Control Plane VSIs for seat {{ student_num }}"
+  ibm.cloudcollection.ibm_is_instance:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ student_num }}-cp-{{ node_count }}-vsi"
+    state: available
+    vpc: "{{ vpc_create_output.resource.id }}"
+    profile: "{{ student_vsi_control_plane_profile }}"
+    image: "{{ image_dict[student_vsi_image] }}"
+    boot_volume:
+      - name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ student_num }}-cp-{{ node_count }}-bootvol"
+    keys:
+      - "{{ ssh_key_create_output.resource.id }}"
+    primary_network_interface:
+      - subnet: "{{ subnet_create_output.resource.id }}"
+        security_groups:
+          - "{{ k8s_control_plane_security_group.resource.id }}"
+    user_data: "{{ lookup('template', 'templates/k8s_control_plane_cloud_config.yaml.j2') }}"
+    zone: "{{ regional_zone }}"
+    tags:
+      - "assetID:student-{{ student_num }}-cp-{{ node_count }}-vsi"
+      - "assetGroup:student-cp-vsi"
+      - "assetType:vsi"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: student_cp_vsi_create_output
+  with_sequence: start=1 end="{{ student_control_plane_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count
+
+- name: Add Student Seat Control Plane VSIs to student_vsi, student_cp_vsi, and workshop_vsi groups
+  add_host:
+    name: "{{ student_cp_vsi_create_output.results[(node_count|int - 1)].resource.primary_network_interface[0]['primary_ipv4_address'] }}"
+    ansible_user: root
+    groups:
+      - student_vsi
+      - student_cp_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_fqdn: "student{{ student_num }}-cp{{ node_count }}.{{ guid }}.{{ domain }}"
+    ansible_set_hostname: "student{{ student_num }}-cp{{ node_count }}"
+    ansible_internal_ip: "{{ student_cp_vsi_create_output.results[(node_count|int - 1)].resource.primary_network_interface[0]['primary_ipv4_address'] }}"
+  with_sequence: start=1 end="{{ student_control_plane_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count

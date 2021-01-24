@@ -1,0 +1,7 @@
+---
+# handlers file for setSystemDNS
+
+- name: reload NetworkManager
+  service:
+    name: NetworkManager
+    state: reloaded

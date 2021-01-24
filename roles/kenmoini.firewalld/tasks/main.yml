@@ -1,0 +1,34 @@
+---
+# tasks file for kenmoini.firewalld
+- name: Install firewalld
+  yum:
+    name: firewalld
+    state: latest
+
+- name: Enable and Start Firewalld
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: Enable Ports on Firewalld
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    state: enabled
+    permanent: yes
+  with_items: "{{ firewalld_ports }}"
+  notify: reload firewalld
+  when: firewalld_ports is defined
+
+- name: Enable Services on Firewalld
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    state: enabled
+    permanent: yes
+  with_items: "{{ firewalld_services }}"
+  notify: reload firewalld
+  when: firewalld_services is defined
+
+- name: Force restart of Firewalld
+  command: systemctl restart firewalld
+  when: force_restart_of_firewalld is defined and force_restart_of_firewalld|bool

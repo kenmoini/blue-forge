@@ -1,0 +1,47 @@
+---
+- name: "Create Workshop Student VSI for seat {{ item }}"
+  ibm.cloudcollection.ibm_is_instance:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-vsi"
+    state: available
+    vpc: "{{ vpc_create_output.resource.id }}"
+    profile: "{{ student_vsi_profile }}"
+    image: "{{ image_dict[student_vsi_image] }}"
+    keys:
+      - "{{ ssh_key_create_output.resource.id }}"
+    primary_network_interface:
+      - subnet: "{{ subnet_create_output.resource.id }}"
+    user_data: "{{ lookup('template', 'templates/student_cloud_config.yaml.j2') }}"
+    zone: "{{ regional_zone }}"
+    tags:
+      - "assetID:student-{{ item }}-vsi"
+      - "assetGroup:student-vsi"
+      - "assetType:vsi"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: student_vsi_create_output
+
+- name: "Create Workshop Student Floating IP for seat {{ item }}"
+  ibm.cloudcollection.ibm_is_floating_ip:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-fip"
+    state: available
+    target: "{{ student_vsi_create_output.resource.primary_network_interface[0]['id'] }}"
+    tags:
+      - "assetID:student-{{ item }}-fip"
+      - "assetGroup:student-fip"
+      - "assetType:fip"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: student_fip_create_output
+
+- name: Add Student Seat to student_vsi and workshop_vsi groups
+  add_host:
+    name: "{{ student_fip_create_output.resource.address }}"
+    ansible_user: root
+    groups:
+      - student_vsi
+      - workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"

@@ -1,0 +1,63 @@
+---
+- name: Bootstrap private subnet nodes
+  hosts: all
+  vars:
+    base_packages:
+      - nano
+      - git
+      - wget
+      - curl
+    cockpit_packages:
+      - cockpit
+
+
+  tasks:
+
+    ###################################### Update Systems
+    - name: Update Systems
+      dnf:
+        name: "*"
+        state: latest
+
+    ############################### Install Base Packages
+    - name: Install base Packages
+      dnf:
+        name: "{{ base_packages }}"
+        state: latest
+
+    ############################ Set Internal DNS Servers
+
+    ########################## Install Cockpit and Enable
+    - name: Install Cockpit
+      dnf:
+        name: "{{ cockpit_packages }}"
+        state: latest
+
+    - name: Enable and Start Cockpit
+      service:
+        name: cockpit.socket
+        state: started
+        enabled: yes
+
+    #####################################################
+    ## BASE NODE CONFIGURATION FINISHED
+    #####################################################
+
+    ## BEGIN K8s for Apps Configuration
+
+    ########################################## NETWORKING
+    ## IP Tables Bridging
+    ## Sysctl for bridging
+    ## Firewall Ports For LBs
+    ## Firewall Ports for Control Plane Nodes
+    ## Firewall Ports for Application Nodes
+
+    ################################### CONTAINER RUNTIME
+    ################################# KUBERNETES BINARIES
+    ######################### CONTROL PLANE CGROUP CONFIG
+    ########################### TEMPLATE OUT CLUSTER INIT
+    ############### INITIALIZE PRIMARY CONTROL PLANE NODE
+    ################# JOIN ADDITIONAL CONTROL PLANE NODES
+    ############################## JOIN APPLICATION NODES
+    ############################ TEMPLATE ADDITIONAL YAML
+    ############################### APPLY ADDITIONAL YAML

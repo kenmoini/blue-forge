@@ -1,0 +1,71 @@
+---
+- name: Destroy IBM Cloud VPC VSI
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - ibm.cloudcollection
+  tasks:
+    - name: Fetch the variables from var file
+      include_vars:
+        file: vars/examples.yml
+
+    - name: Get Floating IP asset
+      ibm_is_floating_ip_info:
+        name: "{{ name_prefix }}-fip"
+      register: fip_info
+      ignore_errors: true
+
+    - name: Release Floating IP
+      ibm_is_floating_ip:
+        state: absent
+        id: "{{ fip_info.resource.id }}"
+      when: fip_info.resource.id is defined
+
+    - name: Get VSI Information
+      ibm_is_instance_info:
+        name: "{{ name_prefix }}-vsi"
+      register: vsi_info
+      ignore_errors: true
+
+    - name: Remove VSI
+      ibm_is_instance:
+        state: absent
+        id: "{{ vsi_info.resource.id }}"
+        keys: []
+      when: vsi_info.resource.id is defined
+
+    - name: Get the ssh Key
+      ibm_is_ssh_key_info:
+        name: "{{ name_prefix }}-ssh-key"
+      register: ssh_key_output
+      ignore_errors: true
+
+    - name: Remove SSH Key
+      ibm_is_ssh_key:
+        state: absent
+        id: "{{ ssh_key_output.resource.id }}"
+      when: ssh_key_output.resource.id is defined
+
+    - name: Get the subnet info
+      ibm_is_subnet_info:
+        name: "{{ name_prefix }}-subnet"
+      register: subnet_info
+      ignore_errors: true
+
+    - name: Remove VPC Subnet
+      ibm_is_subnet:
+        state: absent
+        id: "{{ subnet_info.resource.id }}"
+      when: subnet_info.resource.id is defined
+
+    - name: Get the vpc details
+      ibm_is_vpc_info:
+        name: "{{ name_prefix }}-vpc"
+      register: vpc_output
+      ignore_errors: true
+
+    - name: Remove VPC
+      ibm_is_vpc:
+        state: absent
+        id: "{{ vpc_output.resource.id }}"
+      when: vpc_output.resource.id is defined

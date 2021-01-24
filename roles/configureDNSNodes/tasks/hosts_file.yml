@@ -1,0 +1,10 @@
+---
+- name: Template out the /etc/hosts file on DNS hosts
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "{{ hostvars[item]['ansible_internal_ip'] }}.*$"
+    line: "{{ hostvars[item]['ansible_internal_ip'] }} {{ hostvars[item]['ansible_set_fqdn'] }} {{ hostvars[item]['ansible_set_hostname'] }}"
+    state: present
+    backup: yes
+  tags: etc_hosts
+  with_items: "{{ groups.internal_workshop_vsi }}"

@@ -1,0 +1,8 @@
+---
+# tasks file for createDNSNodes
+- name: Create Security Group
+  include_tasks: security_group.yml
+
+- name: Create DNS Nodes
+  include_tasks:
+    file: create_node.yml

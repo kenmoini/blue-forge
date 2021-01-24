@@ -1,0 +1,5 @@
+---
+
+- name: Add DNS Servers to system_dns_servers list
+  set_fact:
+    system_dns_servers: "{{ system_dns_servers + [hostvars[item]['ansible_internal_ip']] }}"

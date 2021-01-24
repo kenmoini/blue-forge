@@ -1,0 +1,40 @@
+---
+# tasks file for configureDNSNodes
+- name: Update system
+  include_tasks: update_system.yml
+  when: update_system_packages|bool
+  tags:
+    - update_system_packages
+
+- name: Install base packages
+  include_tasks: base_packages.yml
+  tags:
+    - install_base_packages
+
+- name: Set hostname
+  include_tasks: set_hostname.yml
+  tags:
+    - set_hostname
+
+- name: Set up /etc/hosts file
+  include_tasks: hosts_file.yml
+  tags:
+    - template_etc_hosts
+
+- name: Set up BIND DNS
+  include_tasks: setup_bind_dns.yml
+  when: bind_dns|bool
+  tags:
+    - setup_bind_dns
+
+- name: Set up Knot Authoritative DNS
+  include_tasks: setup_knot_dns.yml
+  when: knot_auth_dns|bool
+  tags:
+    - setup_knot_dns
+
+- name: Set up Knot Resolver
+  include_tasks: setup_knot_resolver.yml
+  when: knot_resolving_dns|bool
+  tags:
+    - setup_knot_resolver

@@ -1,0 +1,19 @@
+---
+- name: Install Knot Resolver Repo
+  yum:
+    name: https://secure.nic.cz/files/knot-resolver/knot-resolver-release.el.rpm
+    state: latest
+
+- name: Install Knot Resolver
+  yum:
+    name: ["knot-resolver", "knot-utils"]
+    state: latest
+    update_cache: yes
+
+- name: Template over Knot Resolver Configuration
+  template:
+    src: kresd.conf.j2
+    dest: /etc/knot-resolver/kresd.conf
+    owner: knot
+    group: knot
+  notify: restart kresd

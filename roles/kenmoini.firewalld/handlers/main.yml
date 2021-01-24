@@ -1,0 +1,6 @@
+---
+# handlers file for kenmoini.firewalld
+- name: reload firewalld
+  service:
+    name: firewalld
+    state: restarted

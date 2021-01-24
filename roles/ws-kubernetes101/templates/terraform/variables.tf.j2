@@ -1,0 +1,94 @@
+variable "generationDir" {
+  type    = string
+  default = "{{ generation_directory }}"
+}
+
+variable "guid" {
+  type    = string
+  default = "{{ guid }}"
+}
+variable "workshop_id" {
+  type    = string
+  default = "{{ workshop_id }}"
+}
+variable "workshop_shortcode" {
+  type    = string
+  default = "{{ workshop_shortcode }}"
+}
+
+variable "region" {
+  type    = string
+  default = "{{ region }}"
+}
+variable "regional_zone" {
+  type    = string
+  default = "{{ regional_zone }}"
+}
+variable "api_endpoint" {
+  type    = string
+  default = "{{ api_endpoint }}"
+}
+variable "vpc_total_ipv4_address_count" {
+  type    = number
+  default = "{{ vpc_total_ipv4_address_count }}"
+}
+
+variable "proctor_bastion_vsi_profile" {
+  type    = string
+  default = "{{ proctor_bastion_vsi_profile }}"
+}
+variable "proctor_bastion_vsi_image" {
+  type    = string
+  default = "{{ proctor_bastion_vsi_image }}"
+}
+variable "proctor_username" {
+  type    = string
+  default = "{{ proctor_username }}"
+}
+variable "proctor_password" {
+  type    = string
+  default = "{{ proctor_password }}"
+}
+
+variable "student_count" {
+  type    = number
+  default = "{{ student_count }}"
+}
+variable "student_control_plane_node_count" {
+  type    = number
+  default = "{{ student_control_plane_node_count }}"
+}
+variable "student_application_node_count" {
+  type    = number
+  default = "{{ student_application_node_count }}"
+}
+
+variable "student_username_prefix" {
+  type    = string
+  default = "{{ student_username_prefix }}"
+}
+variable "student_username_suffix" {
+  type    = string
+  default = "{{ student_username_suffix }}"
+}
+variable "student_password" {
+  type    = string
+  default = "{{ student_password }}"
+}
+
+variable "student_vsi_control_plane_profile" {
+  type    = string
+  default = "{{ student_vsi_control_plane_profile }}"
+}
+variable "student_vsi_application_node_profile" {
+  type    = string
+  default = "{{ student_vsi_application_node_profile }}"
+}
+variable "student_vsi_lb_node_profile" {
+  type    = string
+  default = "{{ student_vsi_lb_node_profile }}"
+}
+variable "student_vsi_image" {
+  type    = string
+  default = "{{ student_vsi_image }}"
+}

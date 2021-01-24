@@ -1,0 +1,76 @@
+---
+- name: test
+  gather_facts: false
+  hosts: localhost
+  vars:
+    guid: lol42
+    inv:
+      - name: lol
+        ip: 1
+      - name: wut
+        ip: 9001
+
+  tasks:
+    - name: t
+      set_fact:
+        comp_name_servers: "{{ (comp_name_servers | default([])) + [item.name + '.' + guid] }}"
+      with_items: "{{ inv }}"
+
+    - name: d
+      debug:
+        msg: "{{ comp_name_servers }}"
+
+    - name: set f 2
+      include_vars: 
+        file: "/tmp/.blue-forge/kubernetes101/lol42/tfiles/terraform.tfstate"
+        name: tfstate
+
+    - name: d
+      debug:
+        msg: "{{ tfstate.resources[0] }}"
+
+    - name: d
+      set_fact:
+        j1: "{{ tfstate | community.general.json_query(jsonquery1) }}"
+        j2: "{{ tfstate | community.general.json_query(jsonquery2) | community.general.json_query(vsi_filter) }}"
+      vars:
+        vsi_filter: "[?type=='ibm_is_instance'].instances[0].attributes.primary_network_interface[0].primary_ipv4_address"
+        fip_filter: "[?type=='ibm_is_floating_ip'].instances[0].attributes.address"
+
+        jsonquery1: "resources[?name=='k8s101_{{ guid }}_ns2_fip']"
+        jsonquery2: "resources[?name.contains(@,'k8s101_lol42_ns')]"
+
+
+
+    - name: d
+      debug:
+        msg: "{{ j1 }}"
+
+
+    - name: d
+      debug:
+        msg: "{{ j2 }}"
+
+#    - name: set f 1
+#      set_fact:
+#        f1:
+#          name: test
+#          ip: 3
+#
+#    - name: set f 2
+#      set_fact:
+#        dns_servers: "{{ dns_servers + [f1] }}"
+#
+#    - name: d
+#      debug:
+#        msg: "{{dns_servers}}"
+#
+#    - name: set f 3
+#      set_fact:
+#        f1:
+#          name: zoom
+#          ip: 9001
+#
+#    - name: set f 4
+#      set_fact:
+#        dns_servers: "{{ (dns_servers + [f1]) }}"

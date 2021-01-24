@@ -1,0 +1,45 @@
+---
+- name: Create Proctor Bastion VSI
+  ibm.cloudcollection.ibm_is_instance:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-pb-vsi"
+    state: available
+    vpc: "{{ vpc_create_output.resource.id }}"
+    profile: "{{ proctor_bastion_vsi_profile }}"
+    image: "{{ image_dict[proctor_bastion_vsi_image] }}"
+    keys:
+      - "{{ ssh_key_create_output.resource.id }}"
+    primary_network_interface:
+      - subnet: "{{ subnet_create_output.resource.id }}"
+    zone: "{{ regional_zone }}"
+    user_data: "{{ lookup('template', 'templates/proctor_cloud_config.yaml.j2') }}"
+    tags:
+      - "assetID:pb-vsi"
+      - "assetType:vsi"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: pb_vsi_create_output
+
+- name: Attach Floating IP to Proctor Bastion VSI
+  ibm.cloudcollection.ibm_is_floating_ip:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-pb-fip"
+    state: available
+    target: "{{ pb_vsi_create_output.resource.primary_network_interface[0]['id'] }}"
+    tags:
+      - "assetID:pb-fip"
+      - "assetType:fip"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: pb_fip_create_output
+
+- name: Add Proctor Bastion VSI to Ansible inventory
+  add_host:
+    name: "{{ pb_fip_create_output.resource.address }}"
+    ansible_user: root
+    groups:
+      - pb_vsi
+      - workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"

@@ -1,0 +1,13 @@
+---
+## Organizational variables
+resource_group_name: testAnsibleRG
+guid: r2d2
+name_prefix: ansible-test
+
+## Example playbook vars
+vsi_image: ibm-ubuntu-16-04-05-64-minimal-for-vsi
+vsi_profile: bx2-2x8
+ssh_private_key_file: "~/.ssh/id_rsa"
+ssh_public_key_file: "~/.ssh/id_rsa.pub"
+total_ipv4_address_count: 256
+zone: us-south-3

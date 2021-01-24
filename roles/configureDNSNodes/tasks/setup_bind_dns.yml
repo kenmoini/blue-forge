@@ -1,0 +1,39 @@
+---
+- name: Install BIND
+  yum:
+    name: bind
+    state: latest
+  notify: restart bind
+
+- name: Template over primary BIND configuration
+  template:
+    src: bind_dns.conf.j2
+    dest: /etc/named.conf
+    group: "{{ bind_group }}"
+    owner: "{{ bind_user }}"
+  notify: restart bind
+
+- name: Ensure zone directory exists
+  file:
+    path: "{{ bind_zones_path }}"
+    state: directory
+    group: "{{ bind_group }}"
+    owner: "{{ bind_user }}"
+
+- name: Template over zones files
+  template:
+    src: knot_dns.zone.j2
+    dest: "{{ bind_zones_path }}/{{ item.name }}.{{ item.network }}.zone"
+    backup: yes
+    group: "{{ bind_group }}"
+    owner: "{{ bind_user }}"
+  loop: "{{ zones }}"
+  notify: restart bind
+  when: item.records is defined
+#  when: dns_systems[0]['name'] == hostvars[inventory_hostname]['ansible_set_hostname'] and item.records is defined
+
+- name: Enable and start BIND
+  service:
+    name: named
+    state: started
+    enabled: yes

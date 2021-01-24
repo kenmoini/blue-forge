@@ -1,0 +1,58 @@
+zones:
+  - name: {{ guid }}.{{ domain }}
+    subnet: 10.0.0.0/8
+    network: internal
+    ttl: 3600
+    records:
+      NS:
+{% for host in groups['dns_vsi'] %}
+        - name: {{ hostvars[host]['ansible_set_hostname'] }}
+          ttl: 6400
+          domain: {{ guid }}.{{ domain }}
+{% endfor %}
+      A:
+{% for host in groups['internal_workshop_vsi'] %}
+        - name: {{ hostvars[host]['ansible_set_hostname'] }}
+          ttl: 6400
+          value: {{ hostvars[host]['ansible_internal_ip'] }}
+{% endfor %}
+{% for host in groups['student_lb_vsi'] %}
+        - name: api.{{ hostvars[host]['ansible_set_hostname'] }}
+          ttl: 6400
+          value: {{ hostvars[host]['ansible_internal_ip'] }}
+        - name: apps.{{ hostvars[host]['ansible_set_hostname'] }}
+          ttl: 6400
+          value: {{ hostvars[host]['ansible_internal_ip'] }}
+        - name: '*.apps.{{ hostvars[host]['ansible_set_hostname'] }}'
+          ttl: 6400
+          value: {{ hostvars[host]['ansible_internal_ip'] }}
+{% endfor %}
+
+  - name: {{ guid }}.{{ domain }}
+    subnet: 0.0.0.0/0
+    network: external
+    ttl: 3600
+    records:
+      NS:
+{% for host in groups['dns_vsi'] %}
+        - name: {{ hostvars[host]['ansible_set_hostname'] }}
+          ttl: 6400
+          domain: {{ guid }}.{{ domain }}
+{% endfor %}
+      A:
+{% for host in groups['ext_workshop_vsi'] %}
+        - name: {{ hostvars[host]['ansible_set_hostname'] }}
+          ttl: 6400
+          value: {{ hostvars[host]['ansible_external_ip'] }}
+{% endfor %}
+{% for host in groups['student_lb_vsi'] %}
+        - name: api.{{ hostvars[host]['ansible_set_hostname'] }}
+          ttl: 6400
+          value: {{ hostvars[host]['ansible_external_ip'] }}
+        - name: apps.{{ hostvars[host]['ansible_set_hostname'] }}
+          ttl: 6400
+          value: {{ hostvars[host]['ansible_external_ip'] }}
+        - name: '*.apps.{{ hostvars[host]['ansible_set_hostname'] }}'
+          ttl: 6400
+          value: {{ hostvars[host]['ansible_external_ip'] }}
+{% endfor %}

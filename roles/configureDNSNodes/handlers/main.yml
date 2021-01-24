@@ -1,0 +1,21 @@
+---
+# handlers file for configureDNSNodes
+- name: reload firewalld
+  service:
+    name: firewalld
+    state: restarted
+
+- name: restart knot dns
+  service:
+    name: knot
+    state: restarted
+
+- name: restart bind
+  service:
+    name: named
+    state: restarted
+
+- name: restart kresd
+  service:
+    name: kresd@1
+    state: restarted

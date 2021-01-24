@@ -1,0 +1,27 @@
+---
+ibmcloud_api_key: looooooooooooooooooongString
+
+rh_subscription: false
+
+rh_subscription_username:
+rh_subscription_password:
+
+# RH Subscription Method 1 - Just Auto-Attach
+# rh_subscription_auto_attach and rh_subscription_service_level used together
+#rh_subscription_auto_attach: false
+#rh_subscription_service_level: self-support
+
+# RH Subscription Method 2 - Activation Key
+#rh_subscription_activation_key:
+#rh_subscription_organization_id:
+
+# RH Subscription Method 3 - Pool ID
+#rh_subscription_pool_id:
+
+#rh_subscription_server_hostname: satellite.example.com
+
+guid: lol42
+workshop_id: kubernetes101
+workshop_shortcode: k8s101
+
+generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"

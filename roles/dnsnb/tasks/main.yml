@@ -1,0 +1,35 @@
+---
+# tasks file for dnsnb
+
+- name: AWS - Create A Glue Records in AWS Route53
+  community.aws.route53:
+    aws_access_key: "{{ dnsnb_aws_access_key }}"
+    aws_secret_key: "{{ dnsnb_aws_secret_key }}"
+    state: present
+    zone: "{{ dnsnb_persistent_zone }}"
+    record: "{{ item.name }}.{{ dnsnb_persistent_zone }}"
+    type: A
+    ttl: 7200
+    overwrite: yes
+    value: "{{ item.ip }}"
+  with_items: "{{ dnsnb_custom_nameservers }}"
+  when: dnsnb_provider == "aws"
+
+- name: AWS - Set flattened NS Fact
+  set_fact:
+    comp_name_servers: "{{ (comp_name_servers | default([])) + [item.name + '.' + dnsnb_persistent_zone] }}"
+  with_items: "{{ dnsnb_custom_nameservers }}"
+  when: dnsnb_provider == "aws"
+
+- name: AWS - Create NS Records in AWS Route53
+  community.aws.route53:
+    aws_access_key: "{{ dnsnb_aws_access_key }}"
+    aws_secret_key: "{{ dnsnb_aws_secret_key }}"
+    state: present
+    zone: "{{ dnsnb_persistent_zone }}"
+    record: "{{ dnsnb_delegated_zone }}.{{ dnsnb_persistent_zone }}"
+    type: NS
+    ttl: 7200
+    overwrite: yes
+    value: "{{ comp_name_servers }}"
+  when: dnsnb_provider == "aws"

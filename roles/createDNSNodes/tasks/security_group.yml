@@ -1,0 +1,29 @@
+---
+- name: Create Security Group for DNS Nodes via API
+  uri:
+    url: "{{ api_endpoint }}/v1/security_groups?version=2021-01-12&generation=2"
+    method: POST
+    body_format: json
+    body: "{{ lookup('template', 'security_group.json.j2') }}"
+    headers:
+      Accept: application/json
+      Authorization: "{{ ibm_api_token }}"
+    return_content: yes
+    status_code: [200, 201]
+  register: dns_sg_api
+  ignore_errors: yes
+  changed_when: dns_sg_api.status == 201
+
+- name: Fail if DNS Nodes SG API Call not within response parameters
+  debug:
+    msg: "{{ dns_sg_api }}"
+  failed_when: >
+    dns_sg_api.json.errors[0].code != 'validation_unique_failed' and
+    dns_sg_api.status != 200
+  when: dns_sg_api.json.errors is defined
+
+- name: Query Security Group for DNS Nodes
+  ibm.cloudcollection.ibm_is_security_group_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-dns-sg"
+  register: dns_security_group

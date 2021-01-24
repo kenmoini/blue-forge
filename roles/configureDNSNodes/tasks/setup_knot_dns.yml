@@ -1,0 +1,138 @@
+---
+- name: Enable Knot DNS Copr Repo
+  shell: dnf copr enable -y @cznic/knot-dns-latest
+  args:
+    creates: /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:group_cznic:knot-dns-latest.repo
+    warn: false
+
+- name: Install Knot DNS
+  dnf:
+    name: ["knot", "knot-utils"]
+    state: latest
+    update_cache: yes
+
+- name: Create Zones directory
+  file:
+    path: "{{ knot_auth_dns_default_zone_path }}"
+    state: directory
+    group: "{{ knot_group }}"
+    owner: "{{ knot_user }}"
+    mode: 0770
+
+- name: Generate tsigkey on first dns_systems host, Primary DNS Server
+  shell:
+    cmd: "keymgr -t {{ knot_auth_dns_tsigkey_name }} > {{ knot_auth_dns_tsigkey_path }}"
+  args:
+    creates: "{{ knot_auth_dns_tsigkey_path }}"
+  when: dns_systems[0]['name'] == hostvars[inventory_hostname]['ansible_set_hostname']
+
+- name: Read tsigkey on Primary DNS Server
+  shell:
+    cmd: "cat {{ knot_auth_dns_tsigkey_path }}"
+  register: tsigkey_out
+  when: dns_systems[0]['name'] == hostvars[inventory_hostname]['ansible_set_hostname']
+
+- name: Set tsigkey fact to localhost
+  set_fact:
+    tsigkey_out: "{{ tsigkey_out.stdout }}"
+  delegate_to: localhost
+  delegate_facts: true
+  when: dns_systems[0]['name'] == hostvars[inventory_hostname]['ansible_set_hostname']
+
+- name: Template over Knot DNS Configuration to Primary DNS Server
+  template:
+    src: knot_dns.conf.j2
+    dest: /etc/knot/knot.conf
+    backup: yes
+    group: "{{ knot_group }}"
+    owner: "{{ knot_user }}"
+  notify: restart knot dns
+  vars:
+    dns_server_designation: primary
+  when: dns_systems[0]['name'] == hostvars[inventory_hostname]['ansible_set_hostname']
+
+- name: Template over Zone files to Primary DNS Server
+  template:
+    src: knot_dns.zone.j2
+    dest: "{{ knot_auth_dns_default_zone_path }}/{{ item.name }}.{{ item.network }}.zone"
+    backup: yes
+    group: "{{ knot_group }}"
+    owner: "{{ knot_user }}"
+  loop: "{{ zones }}"
+  notify: restart knot dns
+  when: dns_systems[0]['name'] == hostvars[inventory_hostname]['ansible_set_hostname'] and item.records is defined
+
+- name: Template over Reverse IPv4 Zone files to Primary DNS Server
+  template:
+    src: knot_dns.reverse4.zone.j2
+    dest: "{{ knot_auth_dns_default_zone_path }}/{{ item.reverse_dns_base }}.zone"
+    backup: yes
+    group: "{{ knot_group }}"
+    owner: "{{ knot_user }}"
+  loop: "{{ zones }}"
+  notify: restart knot dns
+  when: dns_systems[0]['name'] == hostvars[inventory_hostname]['ansible_set_hostname'] and item.records is defined and generate_reverse_zones|bool
+
+- name: Template over Reverse IPv6 Zone files to Primary DNS Server
+  template:
+    src: knot_dns.reverse6.zone.j2
+    dest: "{{ knot_auth_dns_default_zone_path }}/{{ (item.subnet_v6 | ipaddr('revdns'))[-(9+(item.subnet_v6|regex_replace('^.*/','')|int)//2):] }}zone"
+    backup: yes
+    group: "{{ knot_group }}"
+    owner: "{{ knot_user }}"
+  loop: "{{ zones }}"
+  notify: restart knot dns
+  when: dns_systems[0]['name'] == hostvars[inventory_hostname]['ansible_set_hostname'] and item.records is defined and item.subnet_v6 is defined and generate_reverse_zones|bool
+
+- name: Template over Knot DNS Configuration to Replica DNS Server
+  template:
+    src: knot_dns.conf.j2
+    dest: /etc/knot/knot.conf
+    backup: yes
+    group: "{{ knot_group }}"
+    owner: "{{ knot_user }}"
+  notify: restart knot dns
+  vars:
+    dns_server_designation: replica
+  when: dns_systems[0]['name'] != hostvars[inventory_hostname]['ansible_set_hostname']
+#- name: Touch zone files on Replica
+#  file:
+#    path: "{{ knot_auth_dns_default_zone_path }}/{{ item.name }}.zone"
+#    state: touch
+#    group: "{{ knot_group }}"
+#    owner: "{{ knot_user }}"
+#  loop: "{{ zones }}"
+#  notify: restart knot dns
+#  when: dns_systems[0]['name'] != hostvars[inventory_hostname]['ansible_set_hostname']
+
+- name: Find old Knot Config files
+  find:
+    paths: /etc/knot/
+    patterns: "knot.conf.*"
+    age: "{{ cleanup_old_zone_backups_older_than }}"
+    age_stamp: mtime
+  register: knot_config_files
+  when: cleanup_old_zone_backups|bool
+
+- name: Delete the Knot Config files matching
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ knot_config_files.files }}"
+  when: cleanup_old_zone_backups|bool
+
+- name: Find old Knot Zone files
+  find:
+    paths: "{{ knot_auth_dns_default_zone_path }}"
+    patterns: "*.zone.*"
+    age: "{{ cleanup_old_zone_backups_older_than }}"
+    age_stamp: mtime
+  register: knot_zone_files
+  when: cleanup_old_zone_backups|bool
+
+- name: Delete the Knot Zone files matching
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ knot_zone_files.files }}"
+  when: cleanup_old_zone_backups|bool

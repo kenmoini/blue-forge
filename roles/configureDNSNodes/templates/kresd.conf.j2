@@ -1,0 +1,53 @@
+net.listen("127.0.0.1", {{ knot_resolving_dns_port }})
+net.listen("::1", {{ knot_resolving_dns_port }})
+net.listen("{{ hostvars[inventory_hostname]['ansible_internal_ip'] }}", {{ knot_resolving_dns_port }})
+net.listen("{{ hostvars[inventory_hostname]['ansible_external_ip'] }}", {{ knot_resolving_dns_port }})
+
+internalDomains = policy.todnames({
+  {% for zone in zones %}{% if zone.records is defined %}'{{ zone.name }}'{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}
+})
+policy.add(policy.suffix(policy.FLAGS({'NO_CACHE'}), internalDomains))
+policy.add(policy.suffix(policy.STUB({'127.0.0.1@{{ knot_auth_dns_port }}' }), internalDomains))
+
+{% if generate_reverse_zones|bool %}
+internalReverseDomains = policy.todnames({
+  {% for zone in zones %}{% if zone.records is defined %}{% if zone.reverse_dns_base is defined %}'{{ zone.reverse_dns_base }}'{% if not loop.last %}, {% endif %}{% endif %}{% endif %}{% endfor %}
+})
+policy.add(policy.suffix(policy.FLAGS({'NO_CACHE'}), internalReverseDomains))
+policy.add(policy.suffix(policy.STUB({'127.0.0.1@{{ knot_auth_dns_port }}' }), internalReverseDomains))
+
+internalReverseSixDomains = policy.todnames({
+  {% for zone in zones %}{% if zone.records is defined %}{% if zone.subnet_v6 is defined %}'{{ (zone.subnet_v6 | ipaddr('revdns'))[-(9+(zone.subnet_v6|regex_replace('^.*/','')|int)//2):] }}'{% if not loop.last %}, {% endif %}{% endif %}{% endif %}{% endfor %}
+})
+policy.add(policy.suffix(policy.FLAGS({'NO_CACHE'}), internalReverseSixDomains))
+policy.add(policy.suffix(policy.STUB({'127.0.0.1@{{ knot_auth_dns_port }}' }), internalReverseSixDomains))
+{% endif %}
+
+{% if knot_resolver_forward_domains|length > 0 %}
+{% for zone in knot_resolver_forward_domains %}
+{{ zone.name }} = policy.todnames({
+  '{{ zone.zone }}'
+})
+policy.add(policy.suffix(policy.FLAGS({'NO_CACHE'}), {{ zone.name }}))
+policy.add(policy.suffix(policy.STUB({'{{ zone.destination }}@{{ zone.port }}' }), {{ zone.name }}))
+{% endfor %}
+{% endif %}
+
+modules.load('view')
+{% for zone in zones %}
+view:addr('{{ zone.subnet }}', policy.all(policy.PASS))
+{% if zone.subnet_v6 is defined %}
+view:addr('{{ zone.subnet_v6 }}', policy.all(policy.PASS))
+{% endif %}
+{% endfor %}
+{% if extra_resolver_acls is defined and extra_resolver_acls|length > 0 %}
+{% for addressBlock in extra_resolver_acls %}
+view:addr('{{ addressBlock.subnetCIDR }}', policy.all(policy.{{ addressBlock.mode }}))
+{% endfor %}
+{% endif %}
+
+policy.add(policy.all(policy.FORWARD({
+  {% for ip_address in upstream_dns_servers %}'{{ ip_address }}'{% if not loop.last %}, {% endif %}{% endfor %}
+})))
+
+cache.size = {{ knot_resolving_dns_cache_size_mb }} * MB

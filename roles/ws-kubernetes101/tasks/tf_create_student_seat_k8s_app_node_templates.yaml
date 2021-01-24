@@ -1,0 +1,17 @@
+---
+- name: Template out K8s App Nodes Cloud Init Config
+  template:
+    src: terraform/cloud_inits/k8s_app_nodes.yaml.j2
+    dest: "{{ tfile_dir }}/cloud_inits/student{{ studentNum }}-k8s_app_node-{{ node_count }}.yaml"
+  when: recreate_templates|bool
+  with_sequence: start=1 end="{{ student_application_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count
+
+- name: "Create Workshop Student {{ studentNum }} App Node Manifest"
+  template:
+    src: terraform/k8s_app_nodes.tf.j2
+    dest: "{{ tfile_dir }}/student{{ studentNum }}-k8s_app_node-{{ node_count }}.tf"
+  with_sequence: start=1 end="{{ student_application_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count

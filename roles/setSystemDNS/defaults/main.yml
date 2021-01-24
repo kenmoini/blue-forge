@@ -1,0 +1,9 @@
+---
+# defaults file for setSystemDNS
+system_search_domain: local
+
+system_dns_servers: []
+
+default_system_dns_servers:
+  - 1.1.1.1
+  - 1.0.0.1

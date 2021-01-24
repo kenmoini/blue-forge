@@ -1,0 +1,32 @@
+---
+- name: Wait for VSIs to become reachable over SSH
+  wait_for_connection:
+    delay: 15
+    timeout: 300
+
+## RHEL on IBM Cloud Special Sauce
+### TODO - Run based on if OS is RHEL and RHEL only
+- name: Ensure Subscription Status
+  command: /var/lib/cloud/instance/scripts/vendor/part-004 && touch /opt/.subscribed
+  ignore_errors: yes
+  args:
+    creates: /opt/.subscribed
+
+- name: Update base system packages
+  include_role:
+    name: baseLinuxUpdate
+  vars:
+    reboot_after_kernel_update: true
+
+- name: Install base packages
+  yum:
+    name: "{{ base_install_packages }}"
+    state: latest
+
+- name: Enable and Start firewalld
+  include_role:
+    name: kenmoini.firewalld
+
+- name: Enable and Start Cockpit
+  include_role:
+    name: kenmoini.cockpit

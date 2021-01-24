@@ -1,0 +1,46 @@
+---
+- name: Create generation directory
+  file:
+    path: "{{ generation_directory }}"
+    state: directory
+
+- name: Install passlib locally
+  pip:
+    name: passlib
+    state: present
+
+- name: Generate Proctor Password Hash
+  command: 'python3 -c ''import passlib.hash; print(passlib.hash.sha512_crypt.hash("{{ proctor_password }}"))'''
+  register: generated_proctor_password_hash
+
+- name: Generate Student Password Hash
+  command: 'python3 -c ''import passlib.hash; print(passlib.hash.sha512_crypt.hash("{{ student_password }}"))'''
+  register: generated_student_password_hash
+
+- name: Retrieve IBM Cloud cURL API Bearer Token
+  uri:
+    url: "https://iam.cloud.ibm.com/identity/token"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: urn:ibm:params:oauth:grant-type:apikey
+      apikey: "{{ ibmcloud_api_key }}"
+    headers:
+      Accept: application/json
+  register: curl_api_token
+
+- name: Set IBM Cloud API Token facts
+  set_fact:
+    ibm_api_token: "{{ curl_api_token.json.token_type }} {{ curl_api_token.json.access_token }}"
+
+- name: Retrieve image list
+  ibm.cloudcollection.ibm_is_images_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+  register: images_list
+
+- name: Set VM image name/id dictionary fact
+  set_fact:
+    cacheable: True
+    image_dict: "{{ images_list.resource.images |
+      items2dict(key_name='name', value_name='id') }}"

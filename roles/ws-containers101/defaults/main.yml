@@ -1,0 +1,31 @@
+---
+# defaults file for ws-containers101
+
+guid: lol42
+workshop_id: containers101
+workshop_shortcode: c101
+
+proctor_bastion_vsi_profile: cx2-2x4
+proctor_bastion_vsi_image: ibm-redhat-8-1-minimal-amd64-1
+
+proctor_username: workshopProctor
+proctor_password: noPrizeFor5thBestCloud
+
+student_username_prefix: student
+student_username_suffix:
+student_password: noPrizeFor5thBestCloud
+
+student_vsi_profile: bx2-2x8
+student_vsi_image: ibm-redhat-8-1-minimal-amd64-1
+student_count: 2
+
+vpc_total_ipv4_address_count: 256
+region: us-south
+regional_zone: us-south-3
+
+generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
+
+base_install_packages:
+  - nano
+  - wget
+  - curl

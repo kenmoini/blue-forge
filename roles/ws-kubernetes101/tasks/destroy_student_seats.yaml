@@ -1,0 +1,73 @@
+---
+- name: Get Student Control Plane VSI Information
+  ibm.cloudcollection.ibm_is_instance_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ student_num }}-cp-{{ node_count }}-vsi"
+  register: student_cp_vsi_info
+  ignore_errors: true
+  with_sequence: start=1 end="{{ student_control_plane_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count
+
+- name: Remove Student Control Plane VSIs
+  uri:
+    url: "{{ api_endpoint }}/v1/instances/{{ item.resource.id }}?version=2021-01-12&generation=2"
+    method: DELETE
+    headers:
+      Accept: application/json
+      Authorization: "{{ ibm_api_token }}"
+    return_content: yes
+    status_code: [200, 204]
+  register: cp_vsi_api
+  ignore_errors: yes
+  failed_when: >
+    cp_vsi_api.status == 404
+  changed_when: cp_vsi_api.status == 204
+  when: item.resource.id is defined and (student_cp_vsi_info|length>0)
+  with_items: "{{ student_cp_vsi_info.results }}"
+
+#- name: Remove Student Control Plane VSIs
+#  ibm.cloudcollection.ibm_is_instance:
+#    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+#    state: absent
+#    id: "{{ item.resource.id }}"
+#    keys: []
+#  when: item.resource.id is defined and (student_cp_vsi_info|length>0)
+#  with_items: "{{ student_cp_vsi_info.results }}"
+
+- name: Get Student App Node VSI Information
+  ibm.cloudcollection.ibm_is_instance_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ student_num }}-app-{{ node_count }}-vsi"
+  register: student_app_vsi_info
+  ignore_errors: true
+  with_sequence: start=1 end="{{ student_application_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count
+
+- name: Remove Student App Node VSIs
+  uri:
+    url: "{{ api_endpoint }}/v1/instances/{{ item.resource.id }}?version=2021-01-12&generation=2"
+    method: DELETE
+    headers:
+      Accept: application/json
+      Authorization: "{{ ibm_api_token }}"
+    return_content: yes
+    status_code: [200, 204]
+  register: app_vsi_api
+  ignore_errors: yes
+  failed_when: >
+    app_vsi_api.status == 404
+  changed_when: app_vsi_api.status == 204
+  when: item.resource.id is defined and (student_app_vsi_info|length>0)
+  with_items: "{{ student_app_vsi_info.results }}"
+#- name: Remove Student App Node VSIs
+#  ibm.cloudcollection.ibm_is_instance:
+#    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+#    state: absent
+#    id: "{{ item.resource.id }}"
+#    keys: []
+#  when: item.resource.id is defined and (student_app_vsi_info|length>0)
+#  with_items: "{{ student_app_vsi_info.results }}"

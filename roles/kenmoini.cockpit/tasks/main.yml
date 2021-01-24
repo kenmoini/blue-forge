@@ -1,0 +1,29 @@
+---
+# tasks file for kenmoini.cockpit
+- name: Install Cockpit packages
+  yum:
+    name: "{{ base_cockpit_packages }}"
+    state: latest
+
+- name: Enable and Start Cockpit
+  service:
+    name: cockpit.socket
+    state: started
+    enabled: yes
+
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: Permit traffic for Cockpit TCP
+  ansible.posix.firewalld:
+    port: 9090/tcp
+    permanent: yes
+    state: enabled
+  when: ansible_facts.services['firewalld.service'].status == "enabled"
+
+- name: Permit traffic for Cockpit UDP
+  ansible.posix.firewalld:
+    port: 9090/udp
+    permanent: yes
+    state: enabled
+  when: ansible_facts.services['firewalld.service'].status == "enabled"

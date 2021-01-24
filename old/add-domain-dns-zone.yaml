@@ -1,0 +1,57 @@
+---
+- name: Add a Domain to DNS Services in IBM Cloud
+  hosts: localhost
+  gather_facts: false
+  vars:
+    domain: example.com
+    
+    ibmcloud_api_key: changeThis
+    ibmcloud_region: us-south
+
+    # Organization Vars
+    guid: lol42
+    resource_group: rhWorkshopsRG
+    tag_prefix: rhWS
+
+
+  tasks:
+
+#    - name: Search for resource group
+#      ibm.cloudcollection.ibm_resource_group_info:
+#        name: "{{ resource_group }}"
+#        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+#        region: "{{ ibmcloud_region }}"
+#      register: check_resource_group
+#      ignore_errors: true
+#
+#    - name: Create resource group if does not exist
+#      ibm.cloudcollection.ibm_resource_group:
+#        name: "{{ resource_group }}"
+#        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+#        tags:
+#          - "{{ tag_prefix }}:{{ guid }}"
+#          - "{{ tag_prefix }}:{{ resource_group }}"
+#          - "{{ tag_prefix }}:rg"
+#      when: check_resource_group.stderr is search('ResourceGroupDoesnotExist')
+#      register: created_resource_group
+#
+#    - name: debug
+#      debug:
+#        msg: "{{ created_resource_group }}"
+#      when: check_resource_group.stderr is search('ResourceGroupDoesnotExist')
+
+  #  - name: Search for Service Instance
+  #  - name: Create Service Instance
+    - name: Create DNS Domain
+      ibm.cloudcollection.ibm_dns_domain:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        name: "{{ dns_domain_name }}"
+        state: available
+        target: 1.2.3.4
+        tags:
+          - "{{ tag_prefix }}:{{ guid }}"
+          - "{{ tag_prefix }}:{{ resource_group }}"
+          - "{{ tag_prefix }}:rg"
+      register: create_dns_domain
+  #  - name: Create DNS Zone
+  #    ibm_dns_zone:

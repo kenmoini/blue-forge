@@ -1,0 +1,54 @@
+options {
+  listen-on port {{ bind_port }} { any; };
+
+	directory "/var/named";
+  dump-file "/var/named/data/cache_dump.db";
+  statistics-file "/var/named/data/named_stats.txt";
+  memstatistics-file "/var/named/data/named_mem_stats.txt";
+  secroots-file "/var/named/data/named.secroots";
+  recursing-file "/var/named/data/named.recursing";
+
+	// version statement - inhibited for security
+	version "not available";
+
+	// disable all recursion - authoritative only
+	recursion no;
+
+	// disables all zone transfer requests
+	allow-transfer { none; };
+
+  // allow any system to query and route based on source and acls below
+  allow-query { any; };
+};
+
+acl "internalIBM" { 10.0.0.0/8; };
+view "internalIBM" {
+    //match-clients { "internalIBM"; };
+    match-clients { localnets; };
+    recursion yes;
+
+{% for zone in zones %}
+{% if zone.records is defined %}
+{% if zone.network == "internal" %}
+    zone "{{ zone.name }}" {
+        type master;
+        file "{{ bind_zones_path }}/{{ zone.name }}.internal.zone";
+    };
+{% endif %}
+{% endif %}
+{% endfor %}
+};
+view "outside" {
+    match-clients { any; };
+
+{% for zone in zones %}
+{% if zone.records is defined %}
+{% if zone.network == "external" %}
+    zone "{{ zone.name }}" {
+        type master;
+        file "{{ bind_zones_path }}/{{ zone.name }}.external.zone";
+    };
+{% endif %}
+{% endif %}
+{% endfor %}
+};

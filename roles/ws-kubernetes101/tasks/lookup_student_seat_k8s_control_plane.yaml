@@ -1,0 +1,28 @@
+- name: Find Student CP VSI Objects
+  ibm.cloudcollection.ibm_is_instance_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ student_num }}-cp-{{ node_count }}-vsi"
+  register: student_cp_vsi_create_output
+  with_sequence: start=1 end="{{ student_control_plane_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count
+
+- name: Add Student Seat Control Plane to student_vsi, student_cp_vsi, and workshop_vsi groups
+  add_host:
+    name: "{{ student_cp_vsi_create_output.results[(node_count|int - 1)].resource.primary_network_interface[0]['primary_ipv4_address'] }}"
+    ansible_user: root
+    groups:
+      - student_vsi
+      - student_cp_vsi
+      - workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_fqdn: "student{{ student_num }}-cp{{ node_count }}.{{ guid }}.{{ domain }}"
+    ansible_set_hostname: "student{{ student_num }}-cp{{ node_count }}"
+    ansible_internal_ip: "{{ student_cp_vsi_create_output.results[(node_count|int - 1)].resource.primary_network_interface[0]['primary_ipv4_address'] }}"
+  with_sequence: start=1 end="{{ student_control_plane_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count

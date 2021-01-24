@@ -1,0 +1,191 @@
+server:
+    identity: {{ hostvars[inventory_hostname]['ansible_set_hostname'] }}.{{ domain }}
+    listen: [ 127.0.0.1@{{ knot_auth_dns_port }}, ::1@{{ knot_auth_dns_port }}, {{ hostvars[inventory_hostname]['ansible_internal_ip'] }}@{{ knot_auth_dns_port }}, {{ hostvars[inventory_hostname]['ansible_external_ip'] }}@{{ knot_auth_dns_port }} ]
+    rundir: "/run/knot"
+    user: {{ knot_user }}:{{ knot_group }}
+
+log:
+  - target: {{ knot_auth_dns_logging }}
+    any: {{ knot_auth_dns_logging_level }}
+
+template:
+  - id: default
+    storage: {{ knot_auth_dns_default_zone_path }}
+
+{{ hostvars['localhost']['tsigkey_out'] }}
+
+mod-queryacl:
+  - id: internal
+    address: [10.0.0.0/8]
+    interface: {{ hostvars[inventory_hostname]['ansible_internal_ip'] }}
+
+{% if dns_server_designation == "primary" %}
+# Primary DNS Server Configuration
+
+{% if dns_systems|length > 1 or knot_auth_dns_forward_resolver_fallback|bool or knot_resolving_dns|bool %}
+remote:
+{% if dns_systems|length > 1 %}
+{% for system in dns_systems %}
+{% if system.name != hostvars[inventory_hostname]['ansible_set_hostname'] %}
+  - id: {{ system.name }}
+    address: {{ hostvars[inventory_hostname]['ansible_internal_ip'] }}@{{ knot_auth_dns_port }}
+    key: {{ knot_auth_dns_tsigkey_name }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if knot_auth_dns_forward_resolver_fallback|bool %}
+{% for server in knot_auth_dns_forward_resolver_fallback_servers %}
+  - id: {{ server.remote_name }}
+    address: {{ server.address }}@{{ server.port }}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if knot_auth_dns_forward_resolver_fallback|bool %}
+mod-dnsproxy:
+{% for server in knot_auth_dns_forward_resolver_fallback_servers %}
+  - id: {{ server.dnsproxy_id }}
+    remote: {{ server.remote_name }}
+    fallback: on
+{% endfor %}
+{% endif %}
+
+acl:
+  - id: acl_transfer
+    address: {{ knot_auth_dns_acl_transfer_allow_cidr }}
+    action: transfer
+    key: {{ knot_auth_dns_tsigkey_name }}
+  - id: acl_update
+    address: {{ knot_auth_dns_acl_update_allow_cidr }}
+    action: update
+    key: {{ knot_auth_dns_tsigkey_name }}
+
+zone:
+{% for zone in zones %}
+{% if zone.records is defined %}
+{% if zone.network == "internal" %}
+  - domain: {{ zone.name }}-internal
+{% else %}
+  - domain: {{ zone.name }}
+{% endif %}
+    semantic-checks: {{ knot_auth_dns_semantic_checks }}
+    file: {{ zone.name }}.{{ zone.network }}.zone
+    acl: [acl_update, acl_transfer]
+{% if zone.network == "internal" %}
+    module: mod-queryacl/internal
+{% endif %}
+{% if dns_systems|length > 1 %}
+    notify: [{% for system in dns_systems %}{% if system.name != dns_systems[0]['name'] %}{{ system.name }}{% if loop.index != dns_systems|length %}, {% endif %}{% endif %}{% endfor %}]
+{% endif %}
+{% endif %}
+{% endfor %}
+{% if generate_reverse_zones|bool %}
+{% for zone in zones %}
+{% if zone.records is defined %}
+{% if zone.network == "internal" %}
+  - domain: {{ zone.reverse_dns_base }}-internal
+{% else %}
+  - domain: {{ zone.reverse_dns_base }}
+{% endif %}
+    file: {{ zone.reverse_dns_base }}.zone
+    semantic-checks: {{ knot_auth_dns_semantic_checks }}
+    acl: [acl_update, acl_transfer]
+{% if zone.network == "internal" %}
+    module: mod-queryacl/internal
+{% endif %}
+{% if dns_systems|length > 1 %}
+    notify: [{% for system in dns_systems %}{% if system.name != dns_systems[0]['name'] %}{{ system.name }}{% if loop.index != dns_systems|length %}, {% endif %}{% endif %}{% endfor %}]
+{% endif %}
+{% endif %}
+{% endfor %}
+{% for zone in zones %}
+{% if zone.records is defined %}
+{% if zone.subnet_v6 is defined %}
+  - domain: {{ ((zone.subnet_v6 | ipaddr('revdns'))[-(9+(zone.subnet_v6|regex_replace('^.*/','')|int)//2):])[:-1] }}
+    file: {{ ((zone.subnet_v6 | ipaddr('revdns'))[-(9+(zone.subnet_v6|regex_replace('^.*/','')|int)//2):])[:-1] }}.zone
+    semantic-checks: {{ knot_auth_dns_semantic_checks }}
+    acl: [acl_update, acl_transfer]
+{% if dns_systems|length > 1 %}
+    notify: [{% for system in dns_systems %}{% if system.name != dns_systems[0]['name'] %}{{ system.name }}{% if loop.index != dns_systems|length %}, {% endif %}{% endif %}{% endfor %}]
+{% endif %}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% endif %}
+
+{% if dns_server_designation == "replica" %}
+# Replica DNS Servers Configuration
+
+{% if dns_systems|length > 1 or knot_auth_dns_forward_resolver_fallback|bool or knot_resolving_dns|bool %}
+remote:
+{% if dns_systems|length > 1 %}
+{% for system in dns_systems %}
+{% if system.name != hostvars[inventory_hostname]['ansible_set_hostname'] %}
+  - id: {{ system.name }}
+    address: {{ hostvars[inventory_hostname]['ansible_internal_ip'] }}@{{ knot_auth_dns_port }}
+    key: {{ knot_auth_dns_tsigkey_name }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if knot_auth_dns_forward_resolver_fallback|bool %}
+{% for server in knot_auth_dns_forward_resolver_fallback_servers %}
+  - id: {{ server.remote_name }}
+    address: {{ server.address }}@{{ server.port }}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+acl:
+  - id: acl_notify
+    address: {{ knot_auth_dns_acl_notify_allow_cidr }}
+    action: notify
+    key: {{ knot_auth_dns_tsigkey_name }}
+
+zone:
+{% for zone in zones %}
+{% if zone.records is defined %}
+{% if zone.network == "internal" %}
+  - domain: {{ zone.name }}-internal
+{% else %}
+  - domain: {{ zone.name }}
+{% endif %}
+    semantic-checks: {{ knot_auth_dns_semantic_checks }}
+    acl: acl_notify
+    master: {{ dns_systems[0]['name'] }}
+{% if zone.network == "internal" %}
+    module: mod-queryacl/internal
+{% endif %}
+{% endif %}
+{% endfor %}
+{% if generate_reverse_zones|bool %}
+{% for zone in zones %}
+{% if zone.records is defined %}
+{% if zone.network == "internal" %}
+  - domain: {{ zone.reverse_dns_base }}-internal
+{% else %}
+  - domain: {{ zone.reverse_dns_base }}
+{% endif %}
+    semantic-checks: {{ knot_auth_dns_semantic_checks }}
+    acl: acl_notify
+    master: {{ dns_systems[0]['name'] }}
+{% if zone.network == "internal" %}
+    module: mod-queryacl/internal
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% if generate_reverse_zones|bool %}
+{% for zone in zones %}
+{% if zone.records is defined %}
+{% if zone.subnet_v6 is defined %}
+  - domain: {{ ((zone.subnet_v6 | ipaddr('revdns'))[-(9+(zone.subnet_v6|regex_replace('^.*/','')|int)//2):])[:-1] }}
+    semantic-checks: {{ knot_auth_dns_semantic_checks }}
+    acl: acl_notify
+    master: {{ dns_systems[0]['name'] }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endif %}
