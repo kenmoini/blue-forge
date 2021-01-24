@@ -5,6 +5,10 @@
     path: "{{ bin_directory }}"
     state: directory
 
+- name: Find distribution
+  set_fact:
+    terraform_os: "{{ 'darwin' if ansible_distribution == 'MacOSX' else 'linux' }}"
+
 - name: Download and Unzip Terraform
   ansible.builtin.unarchive:
     src: "{{ terraform_url }}"
