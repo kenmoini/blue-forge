@@ -2,7 +2,7 @@
 ## This Playbook will deploy a Kubernetes Workshop environment with a single bastion node for the workshop proctor, X number of Control Plane Nodes and Y Number of Application Nodes with an optional Load Balancer Node for Z Number of Student Seats
 - name: Deploy Kubernetes 101 Workshop
   hosts: localhost
-  gather_facts: false
+  gather_facts: true
   collections:
     - community.crypto
     - community.general
