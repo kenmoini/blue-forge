@@ -17,11 +17,11 @@
   set_fact:
     recreate_templates: "{{ 'no' if ((check_terraform_state.stat.exists) and (state_size_check.stdout|int > 10)) else 'yes' }}"
 
-- name: Delete terraform template directory
-  file:
-    path: "{{ tfile_dir }}"
-    state: absent
-  when: recreate_templates|bool
+#- name: Delete terraform template directory
+#  file:
+#    path: "{{ tfile_dir }}"
+#    state: absent
+#  when: recreate_templates|bool
 
 - name: Create terraform template directory
   file:
@@ -245,7 +245,6 @@
 
     student_lb_fip_jq: "resources[?name.contains(@,''{{ workshop_shortcode }}_{{ guid }}_student')]"
     student_lb_vsi_jq: "resources[?name.contains(@,''{{ workshop_shortcode }}_{{ guid }}_student')]"
-  when: not recreate_templates|bool
 
 #- name: Find Proctor Bastion VSI Object
 #  ibm.cloudcollection.ibm_is_instance_info:
