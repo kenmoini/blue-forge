@@ -42,8 +42,8 @@ ansible-playbook example_destroy_simple_vm_ssh.yaml # to undo test of basic func
 
 The primary workloads Blue Forge supports are ones the deploy and configure workshop environments.  These are the workshops this platform supports on the IBM Cloud:
 
-- [Beta] Containers 101 - Should be working, minus DNS
-- [WIP, 85%] Kubernetes 101
+- [Beta, regression to alpha] Containers 101 - Should be working, minus DNS.  Needs to be refitted to Terraform deployer
+- [Beta] Kubernetes 101
 - [TBA] Ansible Automation
 - [TBA] Ansible for Windows
 - [TBA] DevOps on OpenShift
@@ -56,6 +56,7 @@ The primary workloads Blue Forge supports are ones the deploy and configure work
 #### Minimum `extra_vars.yaml` file
 
 ```yaml
+domain: ibm.kemo.network
 guid: lol42
 workshop_id: containers101
 workshop_shortcode: c101
@@ -66,11 +67,23 @@ region: us-south
 regional_zone: us-south-3
 
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
+
+# dnsnb_provider: aws or digitalocean
+dnsnb_provider: aws
+
+dnsnb_aws_access_key: AKIAYELOLWUTWTFHAXF7
+dnsnb_aws_secret_key: 2zQZ4j8k3lfsy7tisU5AWYw0qXnutIf5ZDkguyG
+
+dnsnb_do_pat: reallyReallyLongString
+
+dnsnb_persistent_zone: "{{ domain }}"
+dnsnb_delegated_zone: "{{ guid }}"
 ```
 
 ##### Available and Default Variables
 
 ```yaml
+domain: ibm.kemo.network
 guid: lol42
 workshop_id: containers101
 workshop_shortcode: c101
@@ -94,6 +107,17 @@ region: us-south
 regional_zone: us-south-3
 
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
+
+# dnsnb_provider: aws or digitalocean
+dnsnb_provider: aws
+
+dnsnb_aws_access_key: AKIAYELOLWUTWTFHAXF7
+dnsnb_aws_secret_key: 2zQZ4j8k3lfsy7tisU5AWYw0qXnutIf5ZDkguyG
+
+dnsnb_do_pat: reallyReallyLongString
+
+dnsnb_persistent_zone: "{{ domain }}"
+dnsnb_delegated_zone: "{{ guid }}"
 
 base_install_packages:
   - nano
@@ -127,7 +151,7 @@ To deploy the Containers 101 workshop to the IBM Cloud you need an IBM Cloud API
 
 #### Prerequisites
 
-- jq, Python 3, and Pip installed on the Ansible Control Node
+- boto, jq, Python 3, and Pip installed on the Ansible Control Node
 - An AWS or DigitalOcean account with a Domain Zone hosted there and API key to utilize it
 
 #### Environment
@@ -171,5 +195,4 @@ dnsnb_do_pat: reallyReallyLongString
 
 dnsnb_persistent_zone: "{{ domain }}"
 dnsnb_delegated_zone: "{{ guid }}"
-
 ```
