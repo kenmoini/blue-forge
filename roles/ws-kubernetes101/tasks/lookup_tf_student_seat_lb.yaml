@@ -1,0 +1,29 @@
+---
+- name: Pull in terraform state file
+  include_vars: 
+    file: "{{ tfile_dir }}/terraform.tfstate"
+    name: tfstate
+
+- name: Set facts for filters
+  set_fact:
+    fip_filter: "resources[?name.contains(@,'{{ workshop_shortcode }}_{{ guid }}_student_{{ item }}_lb_fip')].instances[0].attributes.address"
+    vsi_filter: resources[?name.contains(@,'{{ workshop_shortcode }}_{{ guid }}_student_{{ item }}_lb_vsi')].instances[0].attributes.primary_network_interface[0].primary_ipv4_address
+
+- name: Add Student Seat Load Balancer to student_vsi, student_lb_vsi, and workshop_vsi groups
+  add_host:
+    name: "{{ tfstate | community.general.json_query(fip_filter) | first }}"
+    ansible_user: root
+    groups:
+      - student_vsi
+      - student_lb_vsi
+      - workshop_vsi
+      - ext_workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_fqdn: "student{{ item }}.{{ guid }}.{{ domain }}"
+    ansible_set_hostname: "student{{ item }}"
+    ansible_external_ip: "{{ tfstate | community.general.json_query(fip_filter) | first }}"
+    ansible_internal_ip: "{{ tfstate | community.general.json_query(vsi_filter) | first }}"
+    tfile_dir: "{{ tfile_dir }}"

@@ -4,11 +4,25 @@
     delay: 15
     timeout: 300
 
+- name: Check if this needs to have the subscription function ran
+  stat:
+    path: /var/lib/cloud/instance/scripts/vendor/part-004
+  ignore_errors: yes
+  register: sub_check
+
+- name: Check if subscription is already attached
+  stat:
+    path: /opt/.subscribed
+  ignore_errors: yes
+  when: sub_check.stat.exists
+  register: sub_run_check
+
 ## RHEL on IBM Cloud Special Sauce
 ### TODO - Run based on if OS is RHEL and RHEL only
 - name: Ensure Subscription Status
   command: /var/lib/cloud/instance/scripts/vendor/part-004 && touch /opt/.subscribed
   ignore_errors: yes
+  when: sub_check.stat.exists and not sub_run_check.stat.exists
   args:
     creates: /opt/.subscribed
 

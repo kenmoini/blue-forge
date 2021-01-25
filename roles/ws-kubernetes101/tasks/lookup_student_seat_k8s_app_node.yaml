@@ -4,7 +4,7 @@
     region: "{{ region }}"
     name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ student_num }}-app-{{ node_count }}-vsi"
   register: student_app_vsi_create_output
-  with_sequence: start=1 end="{{ student_control_plane_node_count }}" stride=1
+  with_sequence: start=1 end="{{ student_application_node_count }}" stride=1
   loop_control:
     loop_var: node_count
 
@@ -23,6 +23,6 @@
     ansible_set_fqdn: "student{{ student_num }}-app{{ node_count }}.{{ guid }}.{{ domain }}"
     ansible_set_hostname: "student{{ student_num }}-app{{ node_count }}"
     ansible_internal_ip: "{{ student_app_vsi_create_output.results[(node_count|int - 1)].resource.primary_network_interface[0]['primary_ipv4_address'] }}"
-  with_sequence: start=1 end="{{ student_control_plane_node_count }}" stride=1
+  with_sequence: start=1 end="{{ student_application_node_count }}" stride=1
   loop_control:
     loop_var: node_count

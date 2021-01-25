@@ -1,0 +1,21 @@
+---
+- name: Set facts for filter
+  set_fact:
+    name_filter: "resources[?name.contains(@,'{{ workshop_shortcode }}_{{ guid }}_student_{{ student_num }}_cp_{{ node_count }}_vsi')]"
+    vsi_filter: "[?type=='ibm_is_instance'].instances[0].attributes.primary_network_interface[0].primary_ipv4_address"
+
+- name: Add Student Seat Control Plane to student_vsi, student_cp_vsi, and workshop_vsi groups
+  add_host:
+    name: "{{ tfstate | community.general.json_query(name_filter) | community.general.json_query(vsi_filter) | first }}"
+    ansible_user: root
+    groups:
+      - student_vsi
+      - student_cp_vsi
+      - workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_fqdn: "student{{ student_num }}-cp{{ node_count }}.{{ guid }}.{{ domain }}"
+    ansible_set_hostname: "student{{ student_num }}-cp{{ node_count }}"
+    ansible_internal_ip: "{{ tfstate | community.general.json_query(name_filter) | community.general.json_query(vsi_filter) | first }}"
