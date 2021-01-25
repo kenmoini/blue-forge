@@ -1,0 +1,264 @@
+---
+- name: Preflight checks
+  include_tasks: preflight.yml
+
+- name: Check for terraform.tfstate file
+  stat:
+    path: "{{ tfile_dir }}/terraform.tfstate"
+  register: check_terraform_state
+
+- name: Check for state of terraform.tfstate file lol
+  shell:
+    cmd: "wc -l {{ tfile_dir }}/terraform.tfstate | cut -d ' ' -f 1"
+  when: check_terraform_state.stat.exists
+  register: state_size_check
+
+- name: Set fact for template recration
+  set_fact:
+    recreate_templates: "{{ 'no' if ((check_terraform_state.stat.exists) and (state_size_check.stdout|int > 10)) else 'yes' }}"
+
+- name: Delete terraform template directory
+  file:
+    path: "{{ tfile_dir }}"
+    state: absent
+  when: recreate_templates|bool
+  tags:
+    - never
+    - delete_terraform_directory
+
+- name: Create terraform template directory
+  file:
+    path: "{{ tfile_dir }}"
+    state: directory
+
+- name: Create terraform cloud init template directory
+  file:
+    path: "{{ tfile_dir }}/cloud_inits"
+    state: directory
+
+- name: Create SSH Key
+  community.crypto.openssh_keypair:
+    path: "{{ generation_directory }}/id_ssh_rsa"
+    size: 4096
+    type: rsa
+  register: new_ssh_key_pair
+  tags:
+    - template_terraform
+    - generate_keys
+
+- name: Create Public SSH Key file
+  copy:
+    content: "{{ new_ssh_key_pair.public_key }}"
+    dest: "{{ generation_directory }}/id_ssh_rsa.pub"
+  tags:
+    - template_terraform
+    - generate_keys
+
+- name: Template out version.tf
+  template:
+    src: terraform/version.tf.j2
+    dest: "{{ tfile_dir }}/version.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out variables.tf
+  template:
+    src: terraform/variables.tf.j2
+    dest: "{{ tfile_dir }}/variables.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out credentials.tf
+  template:
+    src: terraform/credentials.tf.j2
+    dest: "{{ tfile_dir }}/credentials.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out ssh_key.tf
+  template:
+    src: terraform/ssh_key.tf.j2
+    dest: "{{ tfile_dir }}/ssh_key.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out vpc.tf
+  template:
+    src: terraform/vpc.tf.j2
+    dest: "{{ tfile_dir }}/vpc.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out security_groups.tf
+  template:
+    src: terraform/security_groups.tf.j2
+    dest: "{{ tfile_dir }}/security_groups.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out Proctor Bastion Cloud Init Config
+  template:
+    src: terraform/cloud_inits/proctor_bastion.yaml.j2
+    dest: "{{ tfile_dir }}/cloud_inits/proctor_bastion.yaml"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out proctor_bastion.tf
+  template:
+    src: terraform/proctor_bastion.tf.j2
+    dest: "{{ tfile_dir }}/proctor_bastion.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Template out DNS Cloud Init Config
+  template:
+    src: terraform/cloud_inits/dns_nodes.yaml.j2
+    dest: "{{ tfile_dir }}/cloud_inits/dns_node{{ nodeNum }}.yaml"
+  when: recreate_templates|bool
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+  loop_control:
+    loop_var: nodeNum
+  tags:
+    - template_terraform
+
+- name: Template out dns_nodes.tf
+  template:
+    src: terraform/dns_nodes.tf.j2
+    dest: "{{ tfile_dir }}/dns_node{{ nodeNum }}.tf"
+  when: recreate_templates|bool
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+  loop_control:
+    loop_var: nodeNum
+  tags:
+    - template_terraform
+
+- name: Template out Student Container Node Cloud Init Config
+  template:
+    src: terraform/cloud_inits/student_container_nodes.yaml.j2
+    dest: "{{ tfile_dir }}/cloud_inits/student{{ studentNum }}-student_container_node.yaml"
+  when: recreate_templates|bool
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: studentNum
+  tags:
+    - template_terraform
+
+- name: Template out student_container_nodes.tf
+  template:
+    src: terraform/student_container_nodes.tf.j2
+    dest: "{{ tfile_dir }}/student{{ studentNum }}-student_container_node.tf"
+  when: recreate_templates|bool
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: studentNum
+  tags:
+    - template_terraform
+
+- name: Template out main.tf
+  template:
+    src: terraform/main.tf.j2
+    dest: "{{ tfile_dir }}/main.tf"
+  when: recreate_templates|bool
+  tags:
+    - template_terraform
+
+- name: Run Terraform
+  community.general.terraform:
+    project_path: "{{ tfile_dir }}"
+    state: present
+    force_init: true
+    binary_path: "{{ terraform_path }}"
+    variables:
+      ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+  register: terraform_result
+  delay: 3
+  retries: 3
+  until: terraform_result is not failed
+  tags:
+    - run_terraform
+
+- name: Pull in terraform state file
+  include_vars: 
+    file: "{{ tfile_dir }}/terraform.tfstate"
+    name: tfstate
+
+- name: Filter and find needed information
+  set_fact:
+    proctor_bastion_vsi_state: "{{ tfstate | community.general.json_query(proctor_bastion_vsi_jq) | community.general.json_query(vsi_filter) | first }}"
+    proctor_bastion_fip_state: "{{ tfstate | community.general.json_query(proctor_bastion_fip_jq) | community.general.json_query(fip_filter) | first }}"
+
+    dns_vsi_state: "{{ tfstate | community.general.json_query(dns_jq) | community.general.json_query(bulk_vsi_filter) | list }}"
+    dns_fip_state: "{{ tfstate | community.general.json_query(dns_jq) | community.general.json_query(bulk_fip_filter) | list }}"
+
+    student_student_container_fip_state: "{{ tfstate | community.general.json_query(student_jq) | community.general.json_query(student_container_filter) | community.general.json_query(fip_filter)  }}"
+    student_student_container_vsi_state: "{{ tfstate | community.general.json_query(student_jq) | community.general.json_query(student_container_filter) | community.general.json_query(vsi_filter)  }}"
+  vars:
+    vsi_filter: "[?type=='ibm_is_instance'].instances[0].attributes.primary_network_interface[0].primary_ipv4_address"
+    fip_filter: "[?type=='ibm_is_floating_ip'].instances[0].attributes.address"
+    bulk_vsi_filter: "[?type=='ibm_is_instance'].instances[0].attributes.primary_network_interface[0].primary_ipv4_address"
+    bulk_fip_filter: "[?type=='ibm_is_floating_ip'].instances[0].attributes.address"
+    student_container_filter: "[?name.contains(@,'_student_container_')]"
+
+    proctor_bastion_fip_jq: "resources[?name=='{{ workshop_shortcode }}_{{ guid }}_pb_fip']"
+    proctor_bastion_vsi_jq: "resources[?name=='{{ workshop_shortcode }}_{{ guid }}_pb_vsi']"
+
+    dns_jq: "resources[?name.contains(@,'{{ workshop_shortcode }}_{{ guid }}_ns')]"
+
+    student_jq: "resources[?name.contains(@,'{{ workshop_shortcode }}_{{ guid }}_student')]"
+
+
+- name: Add Proctor Bastion VSI to Ansible inventory
+  add_host:
+    name: "{{ proctor_bastion_fip_state }}"
+    ansible_user: root
+    groups:
+      - pb_vsi
+      - workshop_vsi
+      - ext_workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_hostname: "bastion"
+    ansible_set_fqdn: "bastion.{{ guid }}.{{ domain }}"
+    ansible_external_ip: "{{ proctor_bastion_fip_state }}"
+    ansible_internal_ip: "{{ proctor_bastion_vsi_state }}"
+  tags:
+    - proctor_bastion
+
+- name: Add DNS Node to dns_vsi, workshop_vsi, internal_workshop_vsi, and ext_workshop_vsi groups
+  add_host:
+    name: "{{ dns_fip_state[ansible_loop.index0]  }}"
+    ansible_user: root
+    groups:
+      - dns_vsi
+      - workshop_vsi
+      - ext_workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_fqdn: "ns{{ ansible_loop.index }}-{{ workshop_shortcode }}-{{ guid }}.{{ domain }}"
+    ansible_set_hostname: "ns{{ ansible_loop.index }}-{{ workshop_shortcode }}-{{ guid }}"
+    ansible_external_ip: "{{ dns_fip_state[ansible_loop.index0] }}"
+    ansible_internal_ip: "{{ dns_vsi_state[ansible_loop.index0] }}"
+    tfile_dir: "{{ tfile_dir }}"
+  loop: "{{ dns_vsi_state }}"
+  loop_control:
+    extended: yes
+  tags:
+    - dns_nodes
+
+- name: Include Workshop Student Seats
+  include_tasks: lookup_tf_student_seat_student_container.yaml
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  tags:
+    - student_student_container_nodes

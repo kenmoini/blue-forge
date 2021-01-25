@@ -1,0 +1,26 @@
+---
+## This Playbook will deploy a Workshop environment with a single node for a provided number of students
+- name: Deploy Containers 101 Workshop
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - community.crypto
+    - ibm.cloudcollection
+
+  tasks:
+    - name: Build infrastructure
+      include_role:
+        name: ws-containers101
+      vars:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+
+- name: Connect to new VSIs and set base global configuration
+  hosts: workshop_vsi
+  collections:
+    - ansible.posix
+  gather_facts: false
+  tasks:
+    - name: Configure infrastructure basics
+      include_role:
+        name: ws-containers101
+        tasks_from: global_configuration

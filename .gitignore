@@ -1,2 +1,4 @@
 extra_vars.yml
 extra_vars.yaml
+*.extra_vars.yml
+*.extra_vars.yaml

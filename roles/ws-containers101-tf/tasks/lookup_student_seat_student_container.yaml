@@ -1,0 +1,31 @@
+- name: Find Student LB VSI Objects
+  ibm.cloudcollection.ibm_is_instance_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-lb-vsi"
+  register: student_student_container_vsi_create_output
+
+- name: Find Student LB FIP Objects
+  ibm.cloudcollection.ibm_is_floating_ip_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-lb-fip"
+  register: student_student_container_fip_create_output
+
+- name: Add Student Seat Load Balancer to student_vsi, student_student_container_vsi, and workshop_vsi groups
+  add_host:
+    name: "{{ student_student_container_fip_create_output.resource.address }}"
+    groups:
+      - student_vsi
+      - student_student_container_vsi
+      - workshop_vsi
+      - ext_workshop_vsi
+      - internal_workshop_vsi
+    ansible_user: root
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_fqdn: "student{{ item }}.{{ guid }}.{{ domain }}"
+    ansible_set_hostname: "student{{ item }}"
+    ansible_external_ip: "{{ student_student_container_fip_create_output.resource.address }}"
+    ansible_internal_ip: "{{ student_student_container_vsi_create_output.resource.primary_network_interface[0]['primary_ipv4_address'] }}"

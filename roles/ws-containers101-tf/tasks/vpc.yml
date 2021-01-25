@@ -1,0 +1,38 @@
+---
+- name: Create VPC
+  ibm.cloudcollection.ibm_is_vpc:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-vpc"
+    state: available
+    region: "{{ region }}"
+    tags:
+      - "assetID:vpc"
+      - "assetType:vpc"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: vpc_create_output
+
+- name: Create VPC Public Gateway
+  ibm.cloudcollection.ibm_is_public_gateway:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-pubgtw"
+    state: available
+    vpc: "{{ vpc_create_output.resource.id }}"
+    zone: "{{ regional_zone }}"
+    tags:
+      - "assetID:pubgtw"
+      - "assetType:pubgtw"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: pubgtw_create_output
+
+- name: Create VPC Subnet
+  ibm.cloudcollection.ibm_is_subnet:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-subnet"
+    state: available
+    vpc: "{{ vpc_create_output.resource.id }}"
+    total_ipv4_address_count: "{{ vpc_total_ipv4_address_count }}"
+    public_gateway: "{{ pubgtw_create_output.resource.id }}"
+    zone: "{{ regional_zone }}"
+  register: subnet_create_output

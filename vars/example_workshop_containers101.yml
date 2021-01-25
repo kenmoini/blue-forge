@@ -2,9 +2,9 @@
 domain: ibm.example.com
 ibmcloud_api_key: someReallyReallyReallyLongString
 
-guid: lol42
-workshop_id: kubernetes101
-workshop_shortcode: k8s101
+guid: p0dm
+workshop_id: containers101
+workshop_shortcode: c101
 
 proctor_password: changeme987
 student_password: changeme123

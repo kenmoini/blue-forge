@@ -1,0 +1,48 @@
+{
+  "name": "{{ workshop_shortcode }}-{{ guid }}-proctor-sg",
+  "rules": [
+    {% if proctor_bastion_tcp_port_rules is defined %}
+    {% if proctor_bastion_tcp_port_rules | length > 0 %}
+    {% for port in proctor_bastion_tcp_port_rules %}
+    {
+      "direction": "{{ port.direction }}",
+      "ip_version": "ipv4",
+      "protocol": "tcp",
+      "port_min": {{ port.start }},
+      "port_max": {{ port.end }},
+      "remote": {
+        "cidr_block": "{{ port.remote }}"
+      }
+    },
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+    {% if proctor_bastion_udp_port_rules is defined %}
+    {% if proctor_bastion_udp_port_rules | length > 0 %}
+    {% for port in proctor_bastion_udp_port_rules %}
+    {
+      "direction": "{{ port.direction }}",
+      "ip_version": "ipv4",
+      "protocol": "udp",
+      "port_min": {{ port.start }},
+      "port_max": {{ port.end }},
+      "remote": {
+        "cidr_block": "{{ port.remote }}"
+      }
+    },
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+    {
+      "direction": "outbound",
+      "ip_version": "ipv4",
+      "protocol": "all",
+      "remote": {
+        "cidr_block": "0.0.0.0/0"
+      }
+    }
+  ],
+  "vpc": {
+    "id": "{{ vpc_create_output.resource.id }}"
+  }
+}

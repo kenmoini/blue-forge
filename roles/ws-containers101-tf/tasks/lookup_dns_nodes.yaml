@@ -1,0 +1,31 @@
+- name: Find DNS Node VSI Objects
+  ibm.cloudcollection.ibm_is_instance_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-ns{{ item }}-vsi"
+  register: dns_vsi_create_output
+
+- name: Find DNS Node FIP Objects
+  ibm.cloudcollection.ibm_is_floating_ip_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-ns{{ item }}-fip"
+  register: dns_lb_fip_create_output
+
+- name: Add DNS Node to dns_vsi, workshop_vsi, internal_workshop_vsi, and ext_workshop_vsi groups
+  add_host:
+    name: "{{ dns_lb_fip_create_output.resource.address }}"
+    groups:
+      - dns_vsi
+      - workshop_vsi
+      - ext_workshop_vsi
+      - internal_workshop_vsi
+    ansible_user: root
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_fqdn: "ns{{ item }}-{{ workshop_shortcode }}-{{ guid }}.{{ domain }}"
+    ansible_set_hostname: "ns{{ item }}-{{ workshop_shortcode }}-{{ guid }}"
+    ansible_external_ip: "{{ dns_lb_fip_create_output.resource.address }}"
+    ansible_internal_ip: "{{ dns_vsi_create_output.resource.primary_network_interface[0]['primary_ipv4_address'] }}"
+    tfile_dir: "{{ tfile_dir }}"

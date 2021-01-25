@@ -1,0 +1,53 @@
+---
+- name: Wait for VSIs to become reachable over SSH
+  wait_for_connection:
+    delay: 15
+    timeout: 300
+
+- name: Check if this needs to have the subscription function ran
+  stat:
+    path: /var/lib/cloud/instance/scripts/vendor/part-004
+  ignore_errors: yes
+  register: sub_check
+
+- name: Check if subscription is already attached
+  stat:
+    path: /opt/.subscribed
+  ignore_errors: yes
+  when: sub_check.stat.exists
+  register: sub_run_check
+
+## RHEL on IBM Cloud Special Sauce
+### TODO - Run based on if OS is RHEL and RHEL only
+- name: Ensure Subscription Status
+  command: /var/lib/cloud/instance/scripts/vendor/part-004 && touch /opt/.subscribed
+  ignore_errors: yes
+  when: sub_check.stat.exists and not sub_run_check.stat.exists
+  args:
+    creates: /opt/.subscribed
+  register: subscription_exec
+
+- name: Touch state file
+  file:
+    path: /opt/.subscribed
+    state: touch
+  when: subscription_exec.changed
+
+- name: Update base system packages
+  include_role:
+    name: baseLinuxUpdate
+  vars:
+    reboot_after_kernel_update: true
+
+- name: Install base packages
+  yum:
+    name: "{{ base_install_packages }}"
+    state: latest
+
+- name: Enable and Start firewalld
+  include_role:
+    name: kenmoini.firewalld
+
+- name: Enable and Start Cockpit
+  include_role:
+    name: kenmoini.cockpit

@@ -1,0 +1,10 @@
+---
+- name: Create new fact for temp fact
+  set_fact:
+    dnsnb_tmp_ns:
+      name: "{{ hostvars[item]['ansible_set_hostname'] }}"
+      ip: "{{ hostvars[item]['ansible_external_ip'] }}"
+
+- name: Add DNS Servers to dnsnb_custom_nameservers list
+  set_fact:
+    dnsnb_custom_nameservers: "{{ dnsnb_custom_nameservers + [dnsnb_tmp_ns] }}"

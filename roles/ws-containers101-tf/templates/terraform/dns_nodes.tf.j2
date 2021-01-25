@@ -1,0 +1,29 @@
+#############################################################################
+## Generate Virtual Server Instance
+
+resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_vsi" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg ]
+  name    = "{{ workshop_shortcode }}-{{ guid }}-ns{{ nodeNum }}-vsi"
+  image   = "{{ image_dict[dns_vsi_image] }}"
+  profile = "{{ dns_vsi_profile }}"
+
+  primary_network_interface {
+    subnet = ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet.id
+    security_groups = [ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg.id]
+  }
+
+  vpc  = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+  zone = "{{ regional_zone }}"
+  keys = [ibm_is_ssh_key.{{ workshop_shortcode }}_{{ guid }}_ssh_key.id]
+  tags = [ "assetID:dns-ns{{ nodeNum }}-vsi", "assetGroup:dns-vsi", "assetType:vsi", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+
+  boot_volume {
+    name = "{{ workshop_shortcode }}-{{ guid }}-ns{{ nodeNum }}-bootvol"
+  }
+}
+resource "ibm_is_floating_ip" "{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_fip" {
+  depends_on = [ ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_vsi ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-ns{{ nodeNum }}-fip"
+  target     = ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_vsi.primary_network_interface[0].id
+  tags       = [ "assetID:dns-ns{{ nodeNum }}-fip", "assetGroup:dns-fip", "assetType:fip", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+}
