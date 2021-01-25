@@ -1,0 +1,83 @@
+---
+- name: Create workshop assets directory
+  file:
+    path: /opt/workshop_assets
+    state: directory
+  tags:
+    - proctor_bootstrap
+
+- name: Create host files
+  file:
+    path: "{{ item }}"
+    state: touch
+  with_items: [ '/etc/hosts.ext', '/opt/workshop_assets/ansible_inventory' ]
+  tags:
+    - proctor_bootstrap
+
+- name: Template over internal hosts to /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "{{ hostvars[item]['ansible_internal_ip'] }}.*$"
+    line: "{{ hostvars[item]['ansible_internal_ip'] }} {{ hostvars[item]['ansible_set_fqdn'] }} {{ hostvars[item]['ansible_set_hostname'] }}"
+    state: present
+    backup: yes
+  tags:
+    - proctor_etc_hosts
+    - proctor_bootstrap
+  with_items: "{{ groups.internal_workshop_vsi }}"
+
+- name: Template over external hosts to /etc/hosts.ext
+  lineinfile:
+    dest: /etc/hosts.ext
+    regexp: "{{ hostvars[item]['ansible_external_ip'] }}.*$"
+    line: "{{ hostvars[item]['ansible_external_ip'] }} {{ hostvars[item]['ansible_set_fqdn'] }} {{ hostvars[item]['ansible_set_hostname'] }}"
+    state: present
+    backup: yes
+  tags:
+    - proctor_etc_hosts
+    - proctor_bootstrap
+  with_items: "{{ groups.ext_workshop_vsi }}"
+
+- name: Template over Ansible Inventory
+  template:
+    src: proctor_bootstrap_inventory.j2
+    dest: /opt/workshop_assets/ansible_inventory
+  vars:
+    global_groups: "{{ groups }}"
+  tags:
+    - proctor_bootstrap
+    - proctor_inventory
+  register: ansible_inventory_generation
+
+- name: Copy over environment SSH key
+  copy:
+    src: "{{ generation_directory }}/id_ssh_rsa"
+    dest: /opt/workshop_assets/id_ssh_rsa
+    mode: 0600
+  tags:
+    - proctor_ssh_keys
+    - proctor_bootstrap
+
+- name: Copy over bootstraping script
+  copy:
+    src: internal_bootstrap.sh
+    dest: /opt/workshop_assets/internal_bootstrap.sh
+    mode: 0755
+  tags:
+    - proctor_bootstrap_script
+    - proctor_bootstrap
+
+- name: Template over bootstraping playbook
+  template:
+    src: internal_bootstrap.yml.j2
+    dest: /opt/workshop_assets/internal_bootstrap.yml
+  tags:
+    - proctor_bootstrap_script
+    - proctor_bootstrap
+
+- name: Execute bootstrapping script
+  shell: bash /opt/workshop_assets/internal_bootstrap.sh
+  tags:
+    - proctor_bootstrap_script
+    - proctor_bootstrap
+    - proctor_bootstrap_script_execution

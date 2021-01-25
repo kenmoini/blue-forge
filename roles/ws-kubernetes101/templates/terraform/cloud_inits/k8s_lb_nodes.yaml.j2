@@ -43,3 +43,7 @@ rh_subscription:
   server-hostname: {{ rh_subscription_server_hostname }}
   {% endif %}
 {% endif %}
+runcmd:
+  - /var/lib/cloud/instance/scripts/vendor/part-004
+  - touch /opt/.subscribed
+  - dnf update -y

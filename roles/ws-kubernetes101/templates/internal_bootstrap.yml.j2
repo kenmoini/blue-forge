@@ -1,18 +1,33 @@
 ---
 - name: Bootstrap private subnet nodes
-  hosts: all
-  vars:
-    base_packages:
-      - nano
-      - git
-      - wget
-      - curl
-    cockpit_packages:
-      - cockpit
-
+  hosts: workshop_vsi
+  gather_facts: true
 
   tasks:
+    - name: Fix hostnames
+      hostname:
+        name: "{% raw %}{{ hostvars[inventory_hostname]['ansible_set_hostname'] }}{% endraw %}"
 
+- name: Bootstrap private subnet nodes
+  hosts: student_internal_vsi
+  gather_facts: true
+  vars:
+    base_packages:
+{% for package in base_install_packages %}
+      - {{ package }}
+{% endfor %}
+    guid: {{ guid }}
+    domain: {{ domain }}
+    cockpit_packages:
+      - cockpit
+      - cockpit-ws
+      - cockpit-dashboard
+      - cockpit-bridge
+      - cockpit-system
+      - cockpit-packagekit
+
+  tasks:
+{% raw %}
     ###################################### Update Systems
     - name: Update Systems
       dnf:
@@ -26,6 +41,55 @@
         state: latest
 
     ############################ Set Internal DNS Servers
+    - name: Ensure PeerDNS is set for network config
+      ansible.builtin.lineinfile:
+        path: /etc/sysconfig/network-scripts/ifcfg-eth0
+        regexp: '^PEERDNS='
+        line: PEERDNS=no
+      when: inventory_hostname not in groups.dns_vsi
+
+    - name: Set no dns in networkmanager Configuration
+      copy:
+        content: |
+          [main]
+          dns=none
+        dest: /etc/NetworkManager/conf.d/99-no-dns.conf
+        owner: root
+        group: root
+        mode: 0644
+      when: inventory_hostname not in groups.dns_vsi
+
+    - name: Delete /etc/resolv.conf
+      file:
+        path: /etc/resolv.conf
+        state: absent
+      when: inventory_hostname not in groups.dns_vsi
+
+    - name: Touch /etc/resolv.conf
+      file:
+        path: /etc/resolv.conf
+        state: touch
+      when: inventory_hostname not in groups.dns_vsi
+
+    - name: Ensure DNS is set in /etc/resolv.conf
+      ansible.builtin.lineinfile:
+        path: /etc/resolv.conf
+        regexp: "^nameserver {{ hostvars[item]['ansible_internal_ip'] }}"
+        line: "nameserver {{ hostvars[item]['ansible_internal_ip'] }}"
+      with_items: "{{ groups['dns_vsi'] }}"
+      when: inventory_hostname not in groups.dns_vsi
+
+    - name: Ensure search domain is set in /etc/resolv.conf
+      ansible.builtin.lineinfile:
+        path: /etc/resolv.conf
+        regexp: "^search {{ guid }}.{{ domain }}"
+        line: "search {{ guid }}.{{ domain }}"
+      when: inventory_hostname not in groups.dns_vsi
+
+    - name: reload NetworkManager
+      service:
+        name: NetworkManager
+        state: reloaded
 
     ########################## Install Cockpit and Enable
     - name: Install Cockpit
@@ -61,3 +125,4 @@
     ############################## JOIN APPLICATION NODES
     ############################ TEMPLATE ADDITIONAL YAML
     ############################### APPLY ADDITIONAL YAML
+{% endraw %}

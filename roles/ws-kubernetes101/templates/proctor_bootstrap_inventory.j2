@@ -1,0 +1,40 @@
+{% for group in global_groups %}
+{% if groups[group] | length > 0 %}
+[{{group}}]
+{% for host in groups[group] %}
+{{host}} ansible_set_fqdn="{{ hostvars[host]['ansible_set_fqdn'] }}" ansible_set_hostname="{{ hostvars[host]['ansible_set_hostname'] }}" ansible_internal_ip="{{ hostvars[host]['ansible_internal_ip'] }}"
+{% endfor %}
+
+{% endif %}
+{% endfor %}
+
+[student_internal_vsi:children]
+student_app_vsi
+student_cp_vsi
+
+{% for student_num in range(0, (student_count|int + 1)) %}
+[student{{ student_num }}_lb]
+student{{ student_num }}.{{ guid }}.{{ domain }}
+
+[student{{ student_num }}_cp]
+{% for _ in range(student_control_plane_node_count) %}
+student{{ student_num }}-cp{{ loop.index }}.{{ guid }}.{{ domain }}
+{% endfor %}
+
+[student{{ student_num }}_app]
+{% for _ in range(student_application_node_count) %}
+student{{ student_num }}-app{{ loop.index }}.{{ guid }}.{{ domain }}
+{% endfor %}
+
+[student{{ student_num }}:children]
+student{{ student_num }}_lb
+student{{ student_num }}_cp
+student{{ student_num }}_app
+
+{% endfor %}
+
+[all:vars]
+ansible_user=root
+ansible_ssh_user=root
+ansible_ssh_extra_args="-o StrictHostKeyChecking=no"
+ansible_ssh_private_key_file="/opt/workshop_assets/id_ssh_rsa"

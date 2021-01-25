@@ -31,11 +31,11 @@
 - name: Add Student Seat Control Plane VSIs to student_vsi, student_cp_vsi, and workshop_vsi groups
   add_host:
     name: "{{ student_cp_vsi_create_output.results[(node_count|int - 1)].resource.primary_network_interface[0]['primary_ipv4_address'] }}"
-    ansible_user: root
     groups:
       - student_vsi
       - student_cp_vsi
       - internal_workshop_vsi
+    ansible_user: root
     ansible_ssh_user: root
     ansible_ssh_extra_args: -o StrictHostKeyChecking=no
     ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"

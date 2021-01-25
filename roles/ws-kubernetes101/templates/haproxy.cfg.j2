@@ -1,0 +1,57 @@
+defaults
+  mode  tcp
+  maxconn 20000
+  log   /var/run/haproxy/haproxy-log.sock local0
+  option  dontlognull
+  retries 3
+  timeout http-request 10s
+  timeout queue  1m
+  timeout connect  10s
+  timeout client   4h
+  timeout server   4h
+  timeout http-keep-alive 10s
+  timeout check           10s
+  maxconn                 3000
+
+listen stats
+  bind  *:1936
+  mode  http
+  log   global
+  stats enable
+  stats hide-version
+  stats refresh 10s
+  stats show-node
+  stats auth admin:password
+  stats uri /haproxy?stats
+
+frontend external-api-server
+  bind {{ external_lb_ip }}:6443
+  default_backend external-api-server
+
+frontend external-router-http
+  bind {{ external_lb_ip }}:80
+  default_backend external-ingress-http
+
+frontend external-router-https
+  bind {{ external_lb_ip }}:443
+  default_backend external-ingress-https
+
+backend external-api-server
+  balance roundrobin
+{% for host in cp_nodes %}
+  server {{ host.name }} {{ host.ext_ipaddr }}:6443 check
+{% endfor %}
+
+backend external-ingress-http
+  balance roundrobin
+  mode tcp
+{% for host in app_nodes %}
+  server {{ host.name }} {{ host.ext_ipaddr }}:6443 check
+{% endfor %}
+
+backend external-ingress-https
+  balance roundrobin
+  mode tcp
+{% for host in app_nodes %}
+  server {{ host.name }} {{ host.ext_ipaddr }}:6443 check
+{% endfor %}

@@ -25,6 +25,13 @@
   when: sub_check.stat.exists and not sub_run_check.stat.exists
   args:
     creates: /opt/.subscribed
+  register: subscription_exec
+
+- name: Touch state file
+  file:
+    path: /opt/.subscribed
+    state: touch
+  when: subscription_exec.changed
 
 - name: Update base system packages
   include_role:

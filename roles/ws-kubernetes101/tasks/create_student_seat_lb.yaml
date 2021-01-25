@@ -42,13 +42,13 @@
 - name: Add Student Seat Load Balancer to student_vsi, student_lb_vsi, and workshop_vsi groups
   add_host:
     name: "{{ student_lb_fip_create_output.resource.address }}"
-    ansible_user: root
     groups:
       - student_vsi
       - student_lb_vsi
       - workshop_vsi
       - ext_workshop_vsi
       - internal_workshop_vsi
+    ansible_user: root
     ansible_ssh_user: root
     ansible_ssh_extra_args: -o StrictHostKeyChecking=no
     ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"

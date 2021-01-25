@@ -3,7 +3,10 @@
   gather_facts: false
   hosts: localhost
   vars:
+    dns_count: 2
     guid: lol42
+    workshop_id: kubernetes101
+    workshop_shortcode: k8s101
     inv:
       - name: lol
         ip: 1
@@ -25,31 +28,50 @@
         file: "/tmp/.blue-forge/kubernetes101/lol42/tfiles/terraform.tfstate"
         name: tfstate
 
-    - name: d
-      debug:
-        msg: "{{ tfstate.resources[0] }}"
+#    - name: d
+#      debug:
+#        msg: "{{ tfstate.resources[0] }}"
 
     - name: d
       set_fact:
-        j1: "{{ tfstate | community.general.json_query(jsonquery1) }}"
-        j2: "{{ tfstate | community.general.json_query(jsonquery2) | community.general.json_query(vsi_filter) }}"
-      vars:
-        vsi_filter: "[?type=='ibm_is_instance'].instances[0].attributes.primary_network_interface[0].primary_ipv4_address"
-        fip_filter: "[?type=='ibm_is_floating_ip'].instances[0].attributes.address"
+        j1: "{{ tfstate | community.general.json_query(jsonquery1) | community.general.json_query(fip_filter) | list }}"
+        j2: "{{ tfstate | community.general.json_query(jsonquery2) | community.general.json_query(vsi_filter) | list }}"
+        
+        student_lb_fip_state: "{{ tfstate | community.general.json_query(student_jq) | community.general.json_query(lb_filter) | community.general.json_query(fip_filter)  }}"
+        student_lb_vsi_state: "{{ tfstate | community.general.json_query(student_jq) | community.general.json_query(lb_filter) | community.general.json_query(vsi_filter)  }}"
 
-        jsonquery1: "resources[?name=='k8s101_{{ guid }}_ns2_fip']"
+      vars:
+        fip_filter: "[?type=='ibm_is_floating_ip'].instances[0].attributes.address"
+        vsi_filter: "[?type=='ibm_is_instance'].instances[0].attributes.primary_network_interface[0].primary_ipv4_address"
+        lb_filter: "[?name.contains(@,'_lb_')]"
+
+        jsonquery1: "resources[?name.contains(@,'k8s101_lol42_ns')]"
         jsonquery2: "resources[?name.contains(@,'k8s101_lol42_ns')]"
 
+        student_jq: "resources[?name.contains(@,'{{ workshop_shortcode }}_{{ guid }}_student')]"
+        student_cp_jq: "[?name.contains(@,'_cp')]"
+        student_app_jq: "[?name.contains(@,'_app')]"
+
 
 
     - name: d
       debug:
-        msg: "{{ j1 }}"
+        msg: "{{ student_lb_fip_state }}"
 
 
-    - name: d
+    - name: d2
       debug:
-        msg: "{{ j2 }}"
+        var: student_lb_fip_state[0]
+
+    - name: deb
+      debug:
+        msg: "{{ student_lb_vsi_state[ansible_loop.index0] }} - {{ student_lb_fip_state[ansible_loop.index0] }}"
+      loop: "{{ student_lb_fip_state }}"
+      loop_control:
+        extended: yes
+
+
+  
 
 #    - name: set f 1
 #      set_fact:

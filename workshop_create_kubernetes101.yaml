@@ -21,6 +21,8 @@
         tasks_from: deploy_with_terraform
       vars:
         ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+      tags:
+        - build_infra
     #    - name: Deploy DNS Nodes to support workshop
     #      include_role:
     #        name: createDNSNodes
@@ -31,7 +33,7 @@
         name: ws-kubernetes101
         tasks_from: template_zones_file
       tags:
-        template_zones_yaml
+        - template_zones_yaml
 
     - name: Configure DNSNB
       include_role:
@@ -39,8 +41,6 @@
       when: dnsnb_provider is defined
       tags:
         - dnsnb
-      vars:
-        dnsnb_persistent_zone: ibm.kemo.studio
 
 - name: Connect to DNS VSIs and set base global configuration
   hosts: dns_vsi
@@ -111,7 +111,6 @@
       when: inventory_hostname not in groups.dns_vsi
       vars:
         system_search_domain: "{{ guid }}.{{ domain }}"
-        system_dns_servers: "{{ system_dns_servers|default(default_system_dns_servers) }}"
       tags:
         - set_system_dns
 
@@ -119,57 +118,8 @@
   hosts: pb_vsi
   gather_facts: true
   tasks:
-    - name: Template over internal hosts to /etc/hosts.int
-      lineinfile:
-        dest: /etc/hosts.int
-        regexp: "{{ hostvars[item]['ansible_internal_ip'] }}.*$"
-        line: "{{ hostvars[item]['ansible_internal_ip'] }} {{ hostvars[item]['ansible_set_fqdn'] }} {{ hostvars[item]['ansible_set_hostname'] }}"
-        state: present
-        backup: yes
-      tags: etc_hosts
-      with_items: "{{ groups.internal_workshop_vsi }}"
 
-    - name: Template over external hosts to /etc/hosts.ext
-      lineinfile:
-        dest: /etc/hosts.ext
-        regexp: "{{ hostvars[item]['ansible_external_ip'] }}.*$"
-        line: "{{ hostvars[item]['ansible_external_ip'] }} {{ hostvars[item]['ansible_set_fqdn'] }} {{ hostvars[item]['ansible_set_hostname'] }}"
-        state: present
-        backup: yes
-      tags: etc_hosts
-      with_items: "{{ groups.ext_workshop_vsi }}"
-
-    - name: Create workshop assets directory
-      file:
-        path: /opt/workshop_assets
-        state: directory
-
-    - name: Template over Ansible Inventory
-      lineinfile:
-        dest: /opt/workshop_assets/ansible_inventory
-        regexp: "{{ hostvars[item]['ansible_internal_ip'] }}.*$"
-        line: "{{ hostvars[item]['ansible_internal_ip'] }} {{ hostvars[item]['ansible_set_fqdn'] }} {{ hostvars[item]['ansible_set_hostname'] }}"
-        state: present
-        backup: yes
-      tags: etc_hosts
-      with_items: "{{ groups.internal_workshop_vsi }}"
-
-    - name: Copy over environment SSH key
-      copy:
-        src: "{{ generation_directory }}/id_ssh_rsa"
-        dest: /opt/workshop_assets/id_ssh_rsa
-        mode: 0600
-
-    - name: Copy over bootstraping script
-      copy:
-        src: internal_bootstrap.sh
-        dest: /opt/workshop_assets/internal_bootstrap.sh
-        mode: 0755
-
-    - name: Template over bootstraping playbook
-      template:
-        src: internal_bootstrap.yml.j2
-        dest: /opt/workshop_assets/internal_bootstrap.yml
-
-    - name: Execute bootstrapping script
-      command: /opt/workshop_assets/internal_bootstrap.sh
+    - name: Bootstrap Proctor Bastion
+      include_role:
+        name: ws-kubernetes101
+        tasks_from: bootstrap_proctor_bastion.yaml
