@@ -23,7 +23,7 @@ student_vsi_control_plane_profile: bx2-2x8
 student_vsi_application_node_profile: bx2-2x8
 student_vsi_lb_node_profile: cx2-2x4
 student_vsi_image: ibm-redhat-8-1-minimal-amd64-1
-rh_subscription: true
+rh_subscription: false
 
 vpc_total_ipv4_address_count: 1024
 region: us-south
