@@ -15,6 +15,13 @@
 #    backup: yes
 #  notify:
 #    - reload NetworkManager
+- name: Ensure PeerDNS is set for network config
+  ansible.builtin.lineinfile:
+    path: /etc/sysconfig/network-scripts/ifcfg-eth0
+    regexp: '^PEERDNS='
+    line: PEERDNS=no
+  notify:
+    - reload NetworkManager
 
 - name: Create no dns rule for NetworkManager
   copy:
