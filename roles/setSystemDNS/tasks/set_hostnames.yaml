@@ -1,0 +1,4 @@
+---
+- name: Fix hostnames
+  hostname:
+    name: "{{ hostvars[inventory_hostname]['ansible_set_hostname'] }}"
