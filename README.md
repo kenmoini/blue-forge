@@ -36,6 +36,17 @@ ansible-playbook example_destroy_simple_vm_ssh.yaml # to undo test of basic func
 3. If you're here via RHPDS/OpenTLC/Project Tatooine, the IBM Cloud environment doesn't have DNS services, you'll need to deploy that to some nodes yourself and coordinate the sub-zones.  There are assets in the `ws-kubernetes101` role that show how do deploy the DNS nodes, glue it together with an external zone hosted at AWS Route53 or DigitalOcean, and configure the other nodes to access it via split-horizon resolution.
 ---
 
+## Using in Ansible Tower
+
+You'll need to add the passlib package to your Ansible Tower virtualenv - do the following as root:
+
+```bash
+# source /var/lib/awx/venv/ansible/bin/activate
+# umask 0022
+# pip install --upgrade passlib
+# deactivate
+```
+
 ## Workshops
 
 The primary workloads Blue Forge supports are ones the deploy and configure workshop environments.  These are the workshops this platform supports on the IBM Cloud:

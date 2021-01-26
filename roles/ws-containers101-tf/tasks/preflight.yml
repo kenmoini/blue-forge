@@ -8,6 +8,7 @@
   pip:
     name: passlib
     state: present
+  when: tower_job_id is not defined
 
 - name: Generate Proctor Password Hash
   command: 'python3 -c ''import passlib.hash; print(passlib.hash.sha512_crypt.hash("{{ proctor_password }}"))'''
