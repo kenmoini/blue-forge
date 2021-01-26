@@ -22,6 +22,7 @@
     variables:
       ibmcloud_api_key: "{{ ibmcloud_api_key }}"
   when: check_terraform_state.stat.exists|bool
+  ignore_errors: yes
   register: terraform_result
   delay: 3
   retries: 3
