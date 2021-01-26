@@ -40,3 +40,4 @@ runcmd:
   - /var/lib/cloud/instance/scripts/vendor/part-004
   - touch /opt/.subscribed
   - dnf update -y
+  - dnf install -y {% for pkg in base_install_packages %}{{ pkg }} {% endfor %} git
