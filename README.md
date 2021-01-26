@@ -16,7 +16,7 @@ export IC_REGION=<REGION_NAME_HERE>
 2. Pull in needed Collections (once)
 
 ```bash
-ansible-galaxy install -r requirements.yml
+ansible-galaxy install -r collections/requirements.yml
 ```
 
 3. Run Playbooks
@@ -69,6 +69,7 @@ With N being number of Students, this environment will make the following:
 #### Minimum `extra_vars.yaml` file found in `vars/example_workshop_containers101.yml`
 
 ```bash
+ansible-galaxy install -r collections/requirements.yml
 cp vars/example_workshop_containers101.yml containers101.extra_vars.yml
 ## Edit the containers101.extra_vars.yml file
 ansible-playbook -e "@containers101.extra_vars.yml" workshop_create_containers101.yaml
@@ -99,6 +100,7 @@ With N being number of Students, this environment will make the following:
 #### Minimal `extra_vars.yaml` file found in `vars/example_workshop_kubernetes101.yml`
 
 ```bash
+ansible-galaxy install -r collections/requirements.yml
 cp vars/example_workshop_kubernetes101.yml kubernetes101.extra_vars.yml
 ## Edit the kubernetes101.extra_vars.yml file
 ansible-playbook -e "@kubernetes101.extra_vars.yml" workshop_create_kubernetes101.yaml
@@ -128,6 +130,7 @@ With N being number of Students, this environment will make the following:
 #### Minimum `extra_vars.yaml` file found in `vars/example_workshop_ansible_automation.yml`
 
 ```bash
+ansible-galaxy install -r collections/requirements.yml
 cp vars/example_workshop_ansible_automation.yml ansible_automation.extra_vars.yml
 ## Edit the ansible_automation.extra_vars.yml file
 ansible-playbook -e "@ansible_automation.extra_vars.yml" workshop_create_ansible_automation.yaml
