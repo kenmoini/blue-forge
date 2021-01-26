@@ -1,0 +1,28 @@
+resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_student_{{ studentNum }}_tower_node_vsi" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_tower_nodes_sg ]
+  name    = "{{ workshop_shortcode }}-{{ guid }}-student-{{ studentNum }}-tower-node-vsi"
+  image   = "{{ image_dict[student_vsi_image] }}"
+  profile = "{{ student_vsi_tower_node_profile }}"
+
+  primary_network_interface {
+    subnet = ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet.id
+    security_groups = [ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_tower_nodes_sg.id]
+  }
+
+  vpc  = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+  zone = "{{ regional_zone }}"
+  keys = [ibm_is_ssh_key.{{ workshop_shortcode }}_{{ guid }}_ssh_key.id]
+  tags = [ "assetID:student-{{ studentNum }}-tower-node-vsi", "assetGroup:student-tower-node-vsi", "assetType:vsi", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+
+  boot_volume {
+    name = "{{ workshop_shortcode }}-{{ guid }}-student-{{ studentNum }}-tower-node-bootvol"
+  }
+
+  user_data = "${file("./cloud_inits/student{{ studentNum }}-tower_node.yaml")}"
+}
+resource "ibm_is_floating_ip" "{{ workshop_shortcode }}_{{ guid }}_student_{{ studentNum }}_tower_node_fip" {
+  depends_on = [ ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_student_{{ studentNum }}_tower_node_vsi ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-student-{{ studentNum }}-tower-node-fip"
+  target     = ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_student_{{ studentNum }}_tower_node_vsi.primary_network_interface[0].id
+  tags       = [ "assetID:student-{{ studentNum }}-tower-node-fip", "assetGroup:student-tower-node-fip", "assetType:fip", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+}

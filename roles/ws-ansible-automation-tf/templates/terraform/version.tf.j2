@@ -1,0 +1,22 @@
+terraform {
+  required_providers {
+    ibm = {
+      source = "IBM-Cloud/ibm"
+      version = "1.19.0"
+    }
+    local = {
+      source = "hashicorp/local"
+      version = "2.0.0"
+    }
+    tls = {
+      source = "hashicorp/tls"
+      version = "3.0.0"
+    }
+  }
+  required_version = ">= 0.12"
+}
+
+provider "ibm" {
+  region = var.region
+  ibmcloud_api_key = var.ibmcloud_api_key
+}

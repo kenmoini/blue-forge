@@ -1,0 +1,56 @@
+---
+
+- name: Get Student Node Floating IP assets
+  ibm.cloudcollection.ibm_is_floating_ip_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ student_num }}-node-{{ node_count }}-fip"
+  register: student_node_fip_info
+  ignore_errors: true
+  with_sequence: start=1 end="{{ student_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count
+
+- name: Release Student Node Floating IP
+  uri:
+    url: "{{ api_endpoint }}/v1/floating_ips/{{ item.resource.id }}?version=2021-01-12&generation=2"
+    method: DELETE
+    headers:
+      Accept: application/json
+      Authorization: "{{ ibm_api_token }}"
+    return_content: yes
+    status_code: [200, 204]
+  register: node_fip_api
+  ignore_errors: yes
+  failed_when: node_fip_api.status == 404
+  changed_when: node_fip_api.status == 204
+  when: item.resource.id is defined and (student_node_fip_info|length>0)
+  with_items: "{{ student_node_fip_info.results }}"
+
+- name: Get Student Node VSI Information
+  ibm.cloudcollection.ibm_is_instance_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ student_num }}-node-{{ node_count }}-vsi"
+  register: student_node_vsi_info
+  ignore_errors: true
+  with_sequence: start=1 end="{{ student_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count
+
+- name: Remove Student Node VSIs
+  uri:
+    url: "{{ api_endpoint }}/v1/instances/{{ item.resource.id }}?version=2021-01-12&generation=2"
+    method: DELETE
+    headers:
+      Accept: application/json
+      Authorization: "{{ ibm_api_token }}"
+    return_content: yes
+    status_code: [200, 204]
+  register: node_vsi_api
+  ignore_errors: yes
+  failed_when: >
+    node_vsi_api.status == 404
+  changed_when: node_vsi_api.status == 204
+  when: item.resource.id is defined and (student_node_vsi_info|length>0)
+  with_items: "{{ student_node_vsi_info.results }}"

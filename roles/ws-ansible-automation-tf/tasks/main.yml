@@ -1,0 +1,26 @@
+---
+# tasks file for ws-ansible-automation-tf
+- name: Preflight checks
+  include_tasks: preflight.yml
+
+- name: Generate and sync SSH Key Pair
+  include_tasks: ssh_key.yml
+
+- name: Build out VPC and Subnet
+  include_tasks: vpc.yml
+
+- name: Load up Security Group
+  include_tasks: security_group.yml
+
+- name: Create Proctor Resources
+  include_tasks: proctor_bastion.yml
+
+- name: Create Workshop Student Seats - Tower Nodes
+  include_tasks: create_student_seat_tower_node.yaml
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+
+- name: Create Workshop Student Seats - Nodes
+  include_tasks: create_student_seat_k8s_control_plane.yaml
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  loop_control:
+    loop_var: student_num

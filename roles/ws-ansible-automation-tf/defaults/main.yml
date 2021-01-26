@@ -1,0 +1,174 @@
+---
+# defaults file for ws-ansible-automation-tf
+
+guid: an51
+workshop_id: ansible-automation
+workshop_shortcode: ansible
+
+proctor_bastion_vsi_profile: cx2-2x4
+proctor_bastion_vsi_image: ibm-redhat-8-1-minimal-amd64-1
+
+proctor_username: workshopProctor
+proctor_password: noPrizeFor5thBestCloud
+
+student_username_prefix: student
+student_username_suffix:
+student_password: noPrizeFor5thBestCloud
+
+student_count: 2
+student_node_count: 1
+
+student_vsi_node_profile: cx2-2x4
+student_vsi_tower_node_profile: bx2-2x8
+student_vsi_image: ibm-redhat-8-1-minimal-amd64-1
+rh_subscription: false
+
+vpc_total_ipv4_address_count: 1024
+region: us-south
+regional_zone: us-south-3
+api_endpoint: "https://{{ region }}.iaas.cloud.ibm.com"
+
+generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
+
+tfile_dir: "{{ generation_directory }}/tfiles"
+
+base_install_packages:
+  - nano
+  - wget
+  - curl
+  - jq
+  - git
+  - bind-utils
+  - bash-completion
+  - python3
+  - python3-pip
+
+student_node_tcp_port_rules:
+  - start: 22
+    end: 22
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_sn_SSHIn
+  - start: 80
+    end: 80
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_sn_HTTPIn
+  - start: 443
+    end: 443
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_sn_HTTPSIn
+  - start: 9090
+    end: 9090
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_sn_CockpitIn
+
+student_node_udp_port_rules:
+  - start: 9090
+    end: 9090
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: udp_sn_CockpitIn
+
+student_tower_node_tcp_port_rules:
+  - start: 22
+    end: 22
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_stn_SSHIn
+  - start: 80
+    end: 80
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_stn_HTTPIn
+  - start: 443
+    end: 443
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_stn_HTTPSIn
+  - start: 8080
+    end: 8080
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_stn_APIIn
+  - start: 9090
+    end: 9090
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_stn_CockpitIn
+
+student_tower_node_udp_port_rules:
+  - start: 9090
+    end: 9090
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: udp_stn_CockpitIn
+
+proctor_bastion_tcp_port_rules:
+  - start: 22
+    end: 22
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_pb_SSHIn
+  - start: 9090
+    end: 9090
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_pb_CockpitIn
+
+proctor_bastion_udp_port_rules:
+  - start: 9090
+    end: 9090
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: udp_pb_CockpitIn
+
+####################################################################################
+## DNS Configuration
+
+number_of_dns_nodes: 2
+
+# system_domain is hostname FQDN suffix, eg `ns{{ num }}.{{ system_domain }}`
+system_domain: example.com
+
+## dns_daemon options: bind
+dns_daemon: bind
+
+dns_vsi_profile: cx2-2x4
+dns_vsi_image: ibm-centos-8-2-minimal-amd64-2
+
+dns_port: 53
+upstream_dns_server: 1.1.1.1
+
+dns_node_tcp_port_rules:
+  - start: 22
+    end: 22
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_dns_SSHIn
+  - start: 53
+    end: 53
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_dns_DNSIn
+  - start: 9090
+    end: 9090
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_dns_CockpitIn
+
+dns_node_udp_port_rules:
+  - start: 53
+    end: 53
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: udp_dns_DNSIn
+  - start: 9090
+    end: 9090
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: udp_dns_CockpitIn
+
+dnsnb_custom_nameservers: []

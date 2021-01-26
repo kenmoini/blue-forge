@@ -1,6 +1,4 @@
-# Blue Forge - Ansible-powered IBM Cloud Deployments
-
-## NOTE: This repository is being refitted from full Ansible deployers to staged Ansible > Terraform > Ansible deployments due to the IBM Cloud Collections taking too long to complete
+# Blue Forge - Ansible and Terraform powered IBM Cloud Deployments
 
 ## QuickStart Examples - Prerequisites
 
@@ -35,16 +33,16 @@ ansible-playbook example_destroy_simple_vm_ssh.yaml # to undo test of basic func
 2. IBM Cloud has a few different set of cloud offerings, some of which can be used together, some of which cannot fully.
     - There is a "Classic Infrastructure" Cloud, or the v1 IBM Cloud, based on the SoftLayer acquisition.  It's a pretty simple cloud, not as robust as the newer cloud services but still offer a lot of powerful capabilities.  If you're used to DigitalOcean/Linode sort of offerings, these services will seem familiar to you.
     - The newer Cloud service offerings will have things such as tagging, and managing services into Resource Groups, etc.  If you're used to AWS/Azure/GCP this will seem a bit more familiar, and includes a lot of the newer PaaS/SaaS offerings like OpenShift, Serverless, VPCs, etc.
-
+3. If you're here via RHPDS/OpenTLC/Project Tatooine, the IBM Cloud environment doesn't have DNS services, you'll need to deploy that to some nodes yourself and coordinate the sub-zones.  There are assets in the `ws-kubernetes101` role that show how do deploy the DNS nodes, glue it together with an external zone hosted at AWS Route53 or DigitalOcean, and configure the other nodes to access it via split-horizon resolution.
 ---
 
 ## Workshops
 
 The primary workloads Blue Forge supports are ones the deploy and configure workshop environments.  These are the workshops this platform supports on the IBM Cloud:
 
-- [Beta, regression to alpha] Containers 101 - Should be working, minus DNS.  Needs to be refitted to Terraform deployer
+- [Working] Containers 101
 - [Beta] Kubernetes 101
-- [TBA] Ansible Automation
+- [Alpha] Ansible Automation - needs some post-config work to make an easier workshop
 - [TBA] Ansible for Windows
 - [TBA] DevOps on OpenShift
 - [TBA] DevSecOps - Secure Software Factories
@@ -53,77 +51,10 @@ The primary workloads Blue Forge supports are ones the deploy and configure work
 
 ### Containers 101
 
-#### Minimum `extra_vars.yaml` file
+#### Prerequisites
 
-```yaml
-domain: ibm.kemo.network
-guid: lol42
-workshop_id: containers101
-workshop_shortcode: c101
-
-student_count: 2
-
-region: us-south
-regional_zone: us-south-3
-
-generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
-
-# dnsnb_provider: aws or digitalocean
-dnsnb_provider: aws
-
-dnsnb_aws_access_key: AKIAYELOLWUTWTFHAXF7
-dnsnb_aws_secret_key: 2zQZ4j8k3lfsy7tisU5AWYw0qXnutIf5ZDkguyG
-
-dnsnb_do_pat: reallyReallyLongString
-
-dnsnb_persistent_zone: "{{ domain }}"
-dnsnb_delegated_zone: "{{ guid }}"
-```
-
-##### Available and Default Variables
-
-```yaml
-domain: ibm.kemo.network
-guid: lol42
-workshop_id: containers101
-workshop_shortcode: c101
-
-proctor_bastion_vsi_profile: cx2-2x4
-proctor_bastion_vsi_image: ibm-redhat-8-1-minimal-amd64-1
-
-proctor_username: workshopProctor
-proctor_password: noPrizeFor5thBestCloud
-
-student_username_prefix: student
-student_username_suffix:
-student_password: noPrizeFor5thBestCloud
-
-student_vsi_profile: bx2-2x8
-student_vsi_image: ibm-redhat-8-1-minimal-amd64-1
-student_count: 2
-
-vpc_total_ipv4_address_count: 256
-region: us-south
-regional_zone: us-south-3
-
-generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
-
-# dnsnb_provider: aws or digitalocean
-dnsnb_provider: aws
-
-dnsnb_aws_access_key: AKIAYELOLWUTWTFHAXF7
-dnsnb_aws_secret_key: 2zQZ4j8k3lfsy7tisU5AWYw0qXnutIf5ZDkguyG
-
-dnsnb_do_pat: reallyReallyLongString
-
-dnsnb_persistent_zone: "{{ domain }}"
-dnsnb_delegated_zone: "{{ guid }}"
-
-base_install_packages:
-  - nano
-  - wget
-  - curl
-```
+- boto, jq, Python 3, and Pip installed on the Ansible Control Node
+- An AWS or DigitalOcean account with a Domain Zone hosted there and API key to utilize it
 
 #### Environment
 
@@ -135,15 +66,14 @@ With N being number of Students, this environment will make the following:
 | 2       | DNS Nodes               | ns[NUM]-[GUID].[DOMAIN]    |
 | 1 Per N | Bastion/Container Host  | student[N].[GUID].[DOMAIN] |
 
-#### Deployment
+#### Minimum `extra_vars.yaml` file found in `vars/example_workshop_containers101.yml`
 
-To deploy the Containers 101 workshop to the IBM Cloud you need an IBM Cloud API Key.  Then follow the next steps:
-
-1. Copy `extra_vars.yml.example` to `extra_vars.yml`
-2. Modify `extra_vars.yml` replacing the LongString with your API Key
-3. Add any additional variables in the `extra_vars.yml` from the reference above to override any defaults
-4. Deploy with `ansible-playbook -e "@extra_vars.yml" workshop_create_containers101.yaml`
-4. Destroy with `ansible-playbook -e "@extra_vars.yml" workshop_destroy_containers101.yaml`
+```bash
+cp vars/example_workshop_containers101.yml containers101.extra_vars.yml
+## Edit the containers101.extra_vars.yml file
+ansible-playbook -e "@containers101.extra_vars.yml" workshop_create_containers101.yaml
+ansible-playbook -e "@containers101.extra_vars.yml" workshop_destroy_containers101.yaml
+```
 
 ---
 
@@ -166,33 +96,40 @@ With N being number of Students, this environment will make the following:
 | Y Per N | K8s Control Plane Nodes | student[N]-cp[Y].[GUID].[DOMAIN]                                                              |
 | Z Per N | K8s Application Nodes   | student[N]-app[Z].[GUID].[DOMAIN]                                                             |
 
-#### Minimal `extra_vars.yaml` file
+#### Minimal `extra_vars.yaml` file found in `vars/example_workshop_kubernetes101.yml`
 
-```yaml
+```bash
+cp vars/example_workshop_kubernetes101.yml kubernetes101.extra_vars.yml
+## Edit the kubernetes101.extra_vars.yml file
+ansible-playbook -e "@kubernetes101.extra_vars.yml" workshop_create_kubernetes101.yaml
+ansible-playbook -e "@kubernetes101.extra_vars.yml" workshop_destroy_kubernetes101.yaml
+```
+
 ---
-domain: ibm.example.com
-ibmcloud_api_key: loooongString
 
-# guid is used to coordinate resources and organize separate environments
-guid: lol42
-# Mostly used for organization purposes
-workshop_id: kubernetes101
-workshop_shortcode: k8s101
-student_count: 2
+### Ansible Automation
 
-generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
+#### Prerequisites
 
-region: us-east
-regional_zone: us-east-3
+- boto, jq, Python 3, and Pip installed on the Ansible Control Node
+- An AWS or DigitalOcean account with a Domain Zone hosted there and API key to utilize it
 
-# dnsnb_provider: aws or digitalocean
-dnsnb_provider: aws
+#### Environment
 
-dnsnb_aws_access_key: AKIAYELOLWUTWTFHAXF7
-dnsnb_aws_secret_key: 2zQZ4j8k3lfsy7tisU5AWYw0qXnutIf5ZDkguyG
+With N being number of Students, this environment will make the following:
 
-dnsnb_do_pat: reallyReallyLongString
+| QTY     | Asset                   | Hostname                           |
+|---------|-------------------------|------------------------------------|
+| 1       | Proctor Bastion         | bastion.[GUID].[DOMAIN]            |
+| 2       | DNS Nodes               | ns[NUM]-[GUID].[DOMAIN]            |
+| 1 Per N | Ansible Tower Host      | student[N].[GUID].[DOMAIN]         |
+| X Per N | Ansible Target Node     | student[N]-node[X].[GUID].[DOMAIN] |
 
-dnsnb_persistent_zone: "{{ domain }}"
-dnsnb_delegated_zone: "{{ guid }}"
+#### Minimum `extra_vars.yaml` file found in `vars/example_workshop_ansible_automation.yml`
+
+```bash
+cp vars/example_workshop_ansible_automation.yml ansible_automation.extra_vars.yml
+## Edit the ansible_automation.extra_vars.yml file
+ansible-playbook -e "@ansible_automation.extra_vars.yml" workshop_create_ansible_automation.yaml
+ansible-playbook -e "@ansible_automation.extra_vars.yml" workshop_destroy_ansible_automation.yaml
 ```

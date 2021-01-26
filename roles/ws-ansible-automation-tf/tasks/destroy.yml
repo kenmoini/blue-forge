@@ -1,0 +1,284 @@
+---
+- name: Check for terraform.tfstate file
+  stat:
+    path: "{{ tfile_dir }}/terraform.tfstate"
+  register: check_terraform_state
+
+- name: Check for state of terraform.tfstate file lol
+  shell:
+    cmd: "wc -l {{ tfile_dir }}/terraform.tfstate | cut -d ' ' -f 1"
+  when: check_terraform_state.stat.exists
+  register: state_size_check
+
+- name: Set fact for template recration
+  set_fact:
+    terraform_path: "{{ generation_directory }}/bin/terraform"
+
+- name: Run Terraform destroy
+  community.general.terraform:
+    project_path: "{{ tfile_dir }}"
+    state: absent
+    binary_path: "{{ terraform_path }}"
+    variables:
+      ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+  when: check_terraform_state.stat.exists|bool
+  register: terraform_result
+  delay: 3
+  retries: 3
+  until: terraform_result is not failed
+  tags:
+    - run_terraform
+
+- name: Remove old generated files
+  file:
+    path: "{{ tfile_dir }}"
+    state: absent
+  when: check_terraform_state.stat.exists|bool
+
+- name: Run manual removal of assets
+  block:
+
+    - name: Get Student Tower Node Floating IP assets
+      ibm.cloudcollection.ibm_is_floating_ip_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-tower-node-fip"
+      register: student_lb_fip_info
+      ignore_errors: true
+      with_sequence: start=0 end="{{ student_count }}" stride=1
+
+    - name: Release Student Tower Node Floating IP
+      uri:
+        url: "{{ api_endpoint }}/v1/floating_ips/{{ item.resource.id }}?version=2021-01-12&generation=2"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Authorization: "{{ ibm_api_token }}"
+        return_content: yes
+        status_code: [200, 204]
+      register: lb_fip_api
+      ignore_errors: yes
+      failed_when: lb_fip_api.status == 404
+      changed_when: lb_fip_api.status == 204
+      when: item.resource.id is defined and (student_lb_fip_info|length>0)
+      with_items: "{{ student_lb_fip_info.results }}"
+
+    - name: Get Student Tower Node Balancer VSI Information
+      ibm.cloudcollection.ibm_is_instance_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-student-{{ item }}-tower-node-vsi"
+        region: "{{ region }}"
+      register: student_lb_vsi_info
+      ignore_errors: true
+      with_sequence: start=0 end="{{ student_count }}" stride=1
+
+    - name: Remove Student Tower Node VSIs
+      uri:
+        url: "{{ api_endpoint }}/v1/instances/{{ item.resource.id }}?version=2021-01-12&generation=2"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Authorization: "{{ ibm_api_token }}"
+        return_content: yes
+        status_code: [200, 204]
+      register: lb_vsi_api
+      ignore_errors: yes
+      failed_when: lb_vsi_api.status == 404
+      changed_when: lb_vsi_api.status == 204
+      when: item.resource.id is defined and (student_lb_vsi_info|length>0)
+      with_items: "{{ student_lb_vsi_info.results }}"
+
+    - name: Dismantle student resources
+      include_tasks: destroy_student_seats.yaml
+      with_sequence: start=0 end="{{ student_count }}" stride=1
+      loop_control:
+        loop_var: student_num
+
+    - name: Get Proctor Floating IP asset
+      ibm.cloudcollection.ibm_is_floating_ip_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-pb-fip"
+      register: pb_fip_info
+      ignore_errors: true
+
+    - name: Release Proctor Floating IP
+      uri:
+        url: "{{ api_endpoint }}/v1/floating_ips/{{ pb_fip_info.resource.id }}?version=2021-01-12&generation=2"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Authorization: "{{ ibm_api_token }}"
+        return_content: yes
+        status_code: [200, 204]
+      register: lb_fip_api
+      ignore_errors: yes
+      failed_when: lb_fip_api.status == 404
+      changed_when: lb_fip_api.status == 204
+      when: pb_fip_info.resource.id is defined
+
+    - name: Get Proctor VSI Information
+      ibm.cloudcollection.ibm_is_instance_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-pb-vsi"
+        region: "{{ region }}"
+      register: pb_vsi_info
+      ignore_errors: true
+
+    - name: Remove Proctor VSI
+      uri:
+        url: "{{ api_endpoint }}/v1/instances/{{ pb_vsi_info.resource.id }}?version=2021-01-12&generation=2"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Authorization: "{{ ibm_api_token }}"
+        return_content: yes
+        status_code: [200, 204]
+      register: pb_vsi_api
+      ignore_errors: yes
+      failed_when: >
+        pb_vsi_api.status == 404
+      changed_when: pb_vsi_api.status == 204
+
+    - name: Get the SSH Key
+      ibm.cloudcollection.ibm_is_ssh_key_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-ssh-key"
+      register: ssh_key_output
+      ignore_errors: true
+
+    - name: Remove SSH Key
+      ibm.cloudcollection.ibm_is_ssh_key:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        state: absent
+        id: "{{ ssh_key_output.resource.id }}"
+      when: ssh_key_output.resource.id is defined
+
+    - name: Query Security Group for Student Nodes
+      ibm.cloudcollection.ibm_is_security_group_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-node-sg"
+      register: student_node_security_group_reg
+      ignore_errors: true
+
+    - name: Remove Security Group for Student Nodes
+      uri:
+        url: "{{ api_endpoint }}/v1/security_groups/{{ student_node_security_group_reg.resource.id }}?version=2021-01-12&generation=2"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Authorization: "{{ ibm_api_token }}"
+        return_content: yes
+        status_code: [200, 204]
+      register: node_sg_api
+      ignore_errors: yes
+      failed_when: >
+        node_sg_api.status == 403 or
+        node_sg_api.status == 404 or
+        node_sg_api.status == 409
+      changed_when: node_sg_api.status == 204
+      when: student_node_security_group_reg.resource.id is defined
+
+    - name: Query Security Group for Tower Nodes
+      ibm.cloudcollection.ibm_is_security_group_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-tower-node-sg"
+      register: tower_node_security_group_reg
+      ignore_errors: true
+
+    - name: Remove Security Group for Tower Nodes
+      uri:
+        url: "{{ api_endpoint }}/v1/security_groups/{{ tower_node_security_group_reg.resource.id }}?version=2021-01-12&generation=2"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Authorization: "{{ ibm_api_token }}"
+        return_content: yes
+        status_code: [200, 204]
+      register: tower_node_sg_api
+      ignore_errors: yes
+      failed_when: >
+        tower_node_sg_api.status == 403 or
+        tower_node_sg_api.status == 404 or
+        tower_node_sg_api.status == 409
+      changed_when: tower_node_sg_api.status == 204
+      when: tower_node_security_group_reg.resource.id is defined
+
+    - name: Query Security Group for Proctor Bastion
+      ibm.cloudcollection.ibm_is_security_group_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-proctor-sg"
+      register: proctor_bastion_security_group
+      ignore_errors: true
+
+    - name: Remove Security Group for Proctor Bastion
+      uri:
+        url: "{{ api_endpoint }}/v1/security_groups/{{ proctor_bastion_security_group.resource.id }}?version=2021-01-12&generation=2"
+        method: DELETE
+        headers:
+          Accept: application/json
+          Authorization: "{{ ibm_api_token }}"
+        return_content: yes
+        status_code: [200, 204]
+      register: pb_sg_api
+      ignore_errors: yes
+      failed_when: >
+        pb_sg_api.status == 403 or
+        pb_sg_api.status == 404 or
+        pb_sg_api.status == 409
+      changed_when: pb_sg_api.status == 204
+      when: proctor_bastion_security_group.resource.id is defined
+
+    - name: Get the VPC Subnet info
+      ibm.cloudcollection.ibm_is_subnet_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-subnet"
+      register: subnet_info
+      ignore_errors: true
+
+    - name: Remove VPC Subnet
+      ibm.cloudcollection.ibm_is_subnet:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        state: absent
+        id: "{{ subnet_info.resource.id }}"
+      when: subnet_info.resource.id is defined
+
+    - name: Get the VPC Public Gateway info
+      ibm.cloudcollection.ibm_is_public_gateway_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-pubgtw"
+      register: pubgtw_info
+      ignore_errors: true
+
+    - name: Remove the VPC Public Gateway
+      ibm.cloudcollection.ibm_is_public_gateway:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        state: absent
+        id: "{{ pubgtw_info.resource.id }}"
+      when: pubgtw_info.resource.id is defined
+
+    - name: Get the VPC details
+      ibm.cloudcollection.ibm_is_vpc_info:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        name: "{{ workshop_shortcode }}-{{ guid }}-vpc"
+      register: vpc_output
+      ignore_errors: true
+
+    - name: Remove VPC
+      ibm.cloudcollection.ibm_is_vpc:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+        region: "{{ region }}"
+        state: absent
+        id: "{{ vpc_output.resource.id }}"
+      when: vpc_output.resource.id is defined
+  when: not check_terraform_state.stat.exists|bool

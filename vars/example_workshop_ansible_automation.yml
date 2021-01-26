@@ -1,0 +1,30 @@
+---
+domain: ibm.example.com
+ibmcloud_api_key: someReallyReallyReallyLongString
+
+guid: an51
+workshop_id: ansible-automation
+workshop_shortcode: ansible
+
+proctor_password: changeme987
+student_password: changeme123
+
+student_count: 2
+student_node_count: 1
+
+generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
+
+region: us-east
+regional_zone: us-east-3
+
+# dnsnb_provider: aws, digitalocean
+dnsnb_provider: aws
+
+dnsnb_persistent_zone: "{{ domain }}"
+dnsnb_delegated_zone: "{{ guid }}"
+
+# AWS Route53
+dnsnb_aws_access_key: AKIAYOLOLOLUAFYKGSF7
+dnsnb_aws_secret_key: someReallyReallyReallyLongString
+# DigitalOcean Domains
+dnsnb_do_pat: someReallyReallyReallyLongString

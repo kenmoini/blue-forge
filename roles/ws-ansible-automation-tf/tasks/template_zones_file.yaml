@@ -1,0 +1,9 @@
+---
+- name: Create zones YAML vars file
+  template:
+    src: knot_dns_zones.yaml.j2
+    dest: "{{ tfile_dir }}/zones.yaml"
+
+- name: Set up DNSNB vars
+  include_tasks: template_dnsnb_vars.yaml
+  with_items: "{{ groups['dns_vsi'] }}"

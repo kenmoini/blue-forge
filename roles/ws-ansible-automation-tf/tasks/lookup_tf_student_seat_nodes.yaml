@@ -1,0 +1,11 @@
+---
+- name: Pull in terraform state file
+  include_vars: 
+    file: "{{ tfile_dir }}/terraform.tfstate"
+    name: tfstate
+
+- name: Inception looping
+  include_tasks: lookup_individual_student_seat_node.yaml
+  with_sequence: start=1 end="{{ student_node_count }}" stride=1
+  loop_control:
+    loop_var: node_count

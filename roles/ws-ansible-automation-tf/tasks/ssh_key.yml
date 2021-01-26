@@ -1,0 +1,19 @@
+---
+- name: Create SSH Key
+  community.crypto.openssh_keypair:
+    path: "{{ generation_directory }}/id_ssh_rsa"
+    size: 4096
+    type: rsa
+  register: new_ssh_key_pair
+
+- name: Configure SSH Key in IBM Cloud
+  ibm.cloudcollection.ibm_is_ssh_key:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-ssh-key"
+    public_key: "{{ new_ssh_key_pair.public_key }}"
+    tags:
+      - "assetID:ssh-key"
+      - "asset:ssh-key"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: ssh_key_create_output

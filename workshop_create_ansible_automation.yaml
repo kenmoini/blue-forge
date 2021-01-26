@@ -1,0 +1,140 @@
+---
+## This Playbook will deploy an Ansible Automation Workshop environment with a single bastion node for the workshop proctor, X number of Target Nodes and 1 Tower Node for N Number of Student Seats
+- name: Deploy Ansible Automation Workshop
+  hosts: localhost
+  gather_facts: true
+  collections:
+    - community.crypto
+    - community.general
+    - ibm.cloudcollection
+
+  tasks:
+    - name: Provision Terraform locally
+      include_role:
+        name: localTerraform
+      tags:
+        - local_terraform
+
+    - name: Build infrastructure
+      include_role:
+        name: ws-ansible-automation-tf
+        tasks_from: deploy_with_terraform
+      vars:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+      tags:
+        - build_infra
+
+    - name: Template out Zones YAML file
+      include_role:
+        name: ws-ansible-automation-tf
+        tasks_from: template_zones_file
+      tags:
+        - template_zones_yaml
+
+    - name: Configure DNSNB
+      include_role:
+        name: dnsnb
+      when: dnsnb_provider is defined
+      tags:
+        - dnsnb
+
+- name: Connect to DNS VSIs and set base global configuration
+  hosts: dns_vsi
+  collections:
+    - ansible.posix
+  gather_facts: true
+  tasks:
+    - name: Configure DNS servers - FirewallD
+      include_role:
+        name: kenmoini.firewalld
+      tags:
+        - dns_configuration
+        - firewalld
+      vars:
+        force_restart_of_firewalld: true
+        firewalld_services:
+          - ssh
+          - cockpit
+        firewalld_ports:
+          - "53/tcp"
+          - "53/udp"
+
+    - name: Configure DNS servers - Cockpit
+      include_role:
+        name: kenmoini.cockpit
+      tags:
+        - dns_configuration
+        - cockpit
+
+    - name: Pull in zones variable
+      include_vars:
+        file: "{{ tfile_dir }}/zones.yaml"
+      tags:
+        - dns_configuration
+        - zones_configuration
+
+    - name: Configure DNS servers
+      include_role:
+        name: configureDNSNodes
+      tags:
+        - dns_configuration
+        - dns_daemon_configuration
+
+- name: Connect to new VSIs and set base global configuration
+  hosts: ext_workshop_vsi
+  collections:
+    - ansible.posix
+  gather_facts: true
+  tasks:
+    - name: Configure infrastructure basics
+      include_role:
+        name: ws-ansible-automation-tf
+        tasks_from: global_configuration
+      tags:
+        - global_configuration
+
+    - name: Configure FirewallD
+      include_role:
+        name: kenmoini.firewalld
+      tags:
+        - global_configuration
+        - firewalld
+      vars:
+        force_restart_of_firewalld: true
+        firewalld_services:
+          - ssh
+          - cockpit
+          - http
+          - https
+
+    - name: Configure Cockpit
+      include_role:
+        name: kenmoini.cockpit
+      tags:
+        - global_configuration
+        - cockpit
+
+    - name: Set proper hostnames
+      include_role:
+        name: setSystemDNS
+        tasks_from: set_hostnames.yaml
+      tags:
+        - set_system_dns
+        - set_hostnames
+
+    - name: Set up System DNS vars
+      include_role:
+        name: setSystemDNS
+        tasks_from: template_system_dns_vars.yaml
+      with_items: "{{ groups['dns_vsi'] }}"
+      tags:
+        - set_system_dns
+
+    - name: Set system DNS to deployed servers
+      include_role:
+        name: setSystemDNS
+      when: inventory_hostname not in groups.dns_vsi
+      vars:
+        system_search_domain: "{{ guid }}.{{ domain }}"
+      tags:
+        - set_system_dns
