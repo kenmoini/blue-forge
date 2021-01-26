@@ -44,10 +44,10 @@
     name: "{{ base_install_packages }}"
     state: latest
 
-- name: Enable and Start firewalld
-  include_role:
-    name: kenmoini.firewalld
-
-- name: Enable and Start Cockpit
-  include_role:
-    name: kenmoini.cockpit
+#- name: Enable and Start firewalld
+#  include_role:
+#    name: kenmoini.firewalld
+#
+#- name: Enable and Start Cockpit
+#  include_role:
+#    name: kenmoini.cockpit
