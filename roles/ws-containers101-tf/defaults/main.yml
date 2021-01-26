@@ -44,6 +44,16 @@ student_container_tcp_port_rules:
     direction: inbound
     remote: 0.0.0.0/0
     name: tcp_scn_SSHIn
+  - start: 80
+    end: 80
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_scn_HTTPIn
+  - start: 443
+    end: 443
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_scn_HTTPSIn
   - start: 9090
     end: 9090
     direction: inbound
