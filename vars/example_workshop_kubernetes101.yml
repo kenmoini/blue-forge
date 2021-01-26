@@ -10,6 +10,9 @@ proctor_password: changeme987
 student_password: changeme123
 student_count: 2
 
+student_control_plane_node_count: 1
+student_application_node_count: 2
+
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
 
 region: us-east
