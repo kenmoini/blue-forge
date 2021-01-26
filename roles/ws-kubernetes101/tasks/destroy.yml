@@ -13,7 +13,7 @@
 - name: Set fact for template recration
   set_fact:
     terraform_destroy: "{{ 'no' if ((check_terraform_state.stat.exists) and (state_size_check.stdout|int > 16)) else 'yes' }}"
-    tfile_dir: "{{ generation_directory }}/bin"
+    terraform_path: "{{ generation_directory }}/bin/terraform"
 
 - name: Run Terraform destroy
   community.general.terraform:
