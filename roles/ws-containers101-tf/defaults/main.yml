@@ -16,7 +16,7 @@ student_username_prefix: student
 student_username_suffix:
 student_password: noPrizeFor5thBestCloud
 
-student_vsi_student_container_node_profile: cx2-2x4
+student_vsi_student_container_node_profile: bx2-2x8
 student_vsi_image: ibm-redhat-8-1-minimal-amd64-1
 rh_subscription: false
 
