@@ -97,6 +97,27 @@
       tags:
         - global_configuration
 
+    - name: Configure FirewallD
+      include_role:
+        name: kenmoini.firewalld
+      tags:
+        - global_configuration
+        - firewalld
+      vars:
+        force_restart_of_firewalld: true
+        firewalld_services:
+          - ssh
+          - cockpit
+          - http
+          - https
+
+    - name: Configure Cockpit
+      include_role:
+        name: kenmoini.cockpit
+      tags:
+        - global_configuration
+        - cockpit
+
     - name: Set proper hostnames
       include_role:
         name: setSystemDNS
