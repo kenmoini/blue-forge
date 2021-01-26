@@ -4,7 +4,7 @@
     src: terraform/cloud_inits/k8s_cp_nodes.yaml.j2
     dest: "{{ tfile_dir }}/cloud_inits/student{{ studentNum }}-k8s_control_plane-{{ node_count }}.yaml"
   when: recreate_templates|bool
-  with_sequence: start=1 end="{{ student_application_node_count }}" stride=1
+  with_sequence: start=1 end="{{ student_control_plane_node_count }}" stride=1
   loop_control:
     loop_var: node_count
 

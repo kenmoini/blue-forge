@@ -110,9 +110,9 @@ resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_dns_s
 #############################################################################
 ## Set Allows on Proctor Security Group
 
-{% if k8s_lb_tcp_port_rules is defined %}
-{% if k8s_lb_tcp_port_rules | length > 0 %}
-{% for port in k8s_lb_tcp_port_rules %}
+{% if proctor_bastion_tcp_port_rules is defined %}
+{% if proctor_bastion_tcp_port_rules | length > 0 %}
+{% for port in proctor_bastion_tcp_port_rules %}
 resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_proctor_sgr_{{ port.name }}" {
   depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg ]
   group     = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg.id
