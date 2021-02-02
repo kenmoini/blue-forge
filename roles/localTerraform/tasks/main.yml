@@ -15,6 +15,8 @@
     dest: "{{ bin_directory }}"
     mode: 0755
     remote_src: yes
+  tags:
+    - download_terraform
 
 - name: Set Terraform path
   set_fact:
