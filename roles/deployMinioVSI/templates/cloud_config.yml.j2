@@ -1,0 +1,29 @@
+#cloud-config
+users:
+{% if proctor_username is defined %}
+  - name: {{ proctor_username }}
+    gecos: Workshop Proctor
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: wheel
+    ssh_import_id: None
+    lock_passwd: false
+    passwd: {{ generated_proctor_password_hash.stdout }}
+    ssh_authorized_keys:
+        - {{ new_ssh_key_pair.public_key }}
+{% endif %}
+{% if service_user_username is defined %}
+  - name: {{ service_user_username }}
+    gecos: Minio Service User
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: wheel
+    ssh_import_id: None
+    lock_passwd: false
+    passwd: {{ generated_service_user_password_hash.stdout }}
+    ssh_authorized_keys:
+        - {{ new_ssh_key_pair.public_key }}
+{% endif %}
+runcmd:
+  - dnf update -y
+  - dnf install -y {% for pkg in base_install_packages %}{{ pkg }} {% endfor %} git
+  - wget -O /usr/local/bin/minio https://dl.min.io/server/minio/release/linux-amd64/minio
+  - chmod +x /usr/local/bin/minio

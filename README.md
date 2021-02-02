@@ -147,3 +147,22 @@ cp vars/example_workshop_ansible_automation.yml ansible_automation.extra_vars.ym
 ansible-playbook -e "@ansible_automation.extra_vars.yml" workshop_create_ansible_automation.yaml
 ansible-playbook -e "@ansible_automation.extra_vars.yml" workshop_destroy_ansible_automation.yaml
 ```
+
+## OpenShift in IBM Cloud - The Hard Way!
+
+If you're utilizing this repo in Project Tatooine and wanting to deploy OpenShift there are a number of challenges:
+
+1. No Fedora/Red Hat CoreOS Instance Images available
+2. No access to Cloud Object Storage to upload custom image - need to use a personal/shared COS resource that's publicly available
+3. No other mechanism for modifying VPC networking specs such as DNS/PXE.
+4. No way to use anything other than cloud-init, like Ignition which is what CoreOS uses...
+
+So with that, there are a few prerequisites to using Blue Forge to deploy OCP 4 to IBM Cloud:
+
+1. Download the RHCOS QEMU QCow, use `guestfish` to modify the Grub boot kernel arguments and dracut to use DHCP and look for DNS at `10.128.10.10`, `10.128.20.10`, and `10.128.30.10` - this allows any IBM Instance created with the subsequent custom image to generate/pull an Ignition file
+
+### Architecture
+
+- Single Node OCP to 3 Zone Region HA
+- Deploys a DNS node in every active region
+- Primary DNS node also serves for ignition generation service at `/generate`

@@ -1,0 +1,17 @@
+---
+- name: Install passlib locally
+  pip:
+    name: passlib
+    state: present
+  when: tower_job_id is not defined
+
+- name: Generate Service User Password Hash
+  command: 'python3 -c ''import passlib.hash; print(passlib.hash.sha512_crypt.hash("{{ service_user_password }}"))'''
+  register: generated_service_user_password_hash
+
+- name: Create Security Group
+  include_tasks: security_group.yml
+
+- name: Create DNS Nodes
+  include_tasks:
+    file: create_node.yml

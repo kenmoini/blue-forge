@@ -1,0 +1,27 @@
+---
+# defaults file for deployMinioVSI
+
+guid: lol42
+workshop_id: containers101
+workshop_shortcode: c101
+
+minio_vsi_profile: cx2-2x4
+minio_vsi_image: ibm-centos-8-2-minimal-amd64-2
+
+proctor_username: workshopProctor
+proctor_password: noPrizeFor5thBestCloud
+
+service_user_username: minioConn
+service_user_password: noPrizeFor5thBestCloud
+
+vpc_total_ipv4_address_count: 256
+region: us-south
+regional_zone: us-south-3
+
+generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
+
+base_install_packages:
+  - nano
+  - wget
+  - curl
+

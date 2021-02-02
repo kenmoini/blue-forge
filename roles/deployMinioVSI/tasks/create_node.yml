@@ -1,0 +1,54 @@
+---
+- name: Create Minio VSI
+  ibm.cloudcollection.ibm_is_instance:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-minio-vsi"
+    state: available
+    vpc: "{{ vpc_create_output.resource.id }}"
+    profile: "{{ minio_vsi_profile }}"
+    image: "{{ image_dict[minio_vsi_image] }}"
+    boot_volume:
+      - name: "{{ workshop_shortcode }}-{{ guid }}-minio-bootvol"
+    keys:
+      - "{{ ssh_key_create_output.resource.id }}"
+    primary_network_interface:
+      - subnet: "{{ subnet_create_output.resource.id }}"
+        security_groups:
+          - "{{ minio_security_group.resource.id }}"
+    zone: "{{ regional_zone }}"
+    user_data: "{{ lookup('template', 'templates/cloud_config.yml.j2') }}"
+    tags:
+      - "assetID:minio-vsi"
+      - "assetType:vsi"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: minio_vsi_create_output
+
+- name: Attach Floating IP to Minio VSI
+  ibm.cloudcollection.ibm_is_floating_ip:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    name: "{{ workshop_shortcode }}-{{ guid }}-minio-fip"
+    state: available
+    target: "{{ minio_vsi_create_output.resource.primary_network_interface[0]['id'] }}"
+    tags:
+      - "assetID:minio-minio-fip"
+      - "assetType:fip"
+      - "guid:{{ guid }}"
+      - "workshop:{{ workshop_id }}"
+  register: minio_fip_create_output
+
+- name: Add minio VSI to Ansible inventory
+  add_host:
+    name: "{{ minio_fip_create_output.resource.address }}"
+    ansible_user: root
+    groups:
+      - minio_vsi
+      - workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_hostname: "minio-{{ guid }}"
+    ansible_set_fqdn: "minio-{{ guid }}.{{ domain }}"
+    ansible_external_ip: "{{ minio_fip_create_output.resource.address }}"
+    ansible_internal_ip: "{{ minio_vsi_create_output.resource.primary_network_interface[0]['primary_ipv4_address'] }}"
