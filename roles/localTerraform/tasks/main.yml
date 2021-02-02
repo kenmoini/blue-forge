@@ -9,6 +9,11 @@
   set_fact:
     terraform_os: "{{ 'darwin' if ansible_distribution == 'MacOSX' else 'linux' }}"
 
+- name: Check for existing Terraform binary
+  ansible.builtin.stat:
+    path: "{{ bin_directory }}/terraform"
+  register: terraform_path_check
+
 - name: Download and Unzip Terraform
   ansible.builtin.unarchive:
     src: "{{ terraform_url }}"
@@ -17,6 +22,7 @@
     remote_src: yes
   tags:
     - download_terraform
+  when: not terraform_path_check.stat.exists
 
 - name: Set Terraform path
   set_fact:
