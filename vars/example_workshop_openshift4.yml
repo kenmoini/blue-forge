@@ -16,8 +16,7 @@ student_count: 2
 
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
 
-region: us-east
-regional_zone: us-east-3
+region: us-south
 
 # dnsnb_provider: aws, digitalocean
 dnsnb_provider: aws
