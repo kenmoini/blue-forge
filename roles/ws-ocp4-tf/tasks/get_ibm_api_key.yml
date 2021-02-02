@@ -1,0 +1,16 @@
+---
+- name: Retrieve IBM Cloud cURL API Bearer Token
+  uri:
+    url: "https://iam.cloud.ibm.com/identity/token"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: urn:ibm:params:oauth:grant-type:apikey
+      apikey: "{{ ibmcloud_api_key }}"
+    headers:
+      Accept: application/json
+  register: curl_api_token
+
+- name: Set IBM Cloud API Token facts
+  set_fact:
+    ibm_api_token: "{{ curl_api_token.json.token_type }} {{ curl_api_token.json.access_token }}"

@@ -1,5 +1,5 @@
 #############################################################################
-## Generate Virtual Server Instance
+## Generate DNS Virtual Server Instance #{{ nodeNum }}
 
 resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_vsi" {
   depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg ]
@@ -8,12 +8,12 @@ resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_
   profile = "{{ dns_vsi_profile }}"
 
   primary_network_interface {
-    subnet = ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet.id
+    subnet = ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet{{ ansible_loop.index0 }}.id
     security_groups = [ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg.id]
   }
 
   vpc  = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
-  zone = "{{ regional_zone }}"
+  zone = "{{ zone_list[ansible_loop.index0] }}"
   keys = [ibm_is_ssh_key.{{ workshop_shortcode }}_{{ guid }}_ssh_key.id]
   tags = [ "assetID:dns-ns{{ nodeNum }}-vsi", "assetGroup:dns-vsi", "assetType:vsi", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
 

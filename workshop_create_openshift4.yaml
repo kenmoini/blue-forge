@@ -9,10 +9,23 @@
     - ibm.cloudcollection
 
   tasks:
-  # Create Proctor Bastion/Boostrap Node in IBM with basic Ansible Modules
-  # Configure PB/BSN with Terraform, fcct, jq, oc, openshift-install, and other basics
+    # Preflight tasks such as generation directory
+    - name: Provision Terraform locally
+      include_role:
+        name: localTerraform
+      tags:
+        - local_terraform
+
+    - name: Build infrastructure
+      include_role:
+        name: ws-ocp4-tf
+      vars:
+        ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+      tags:
+        - build_infra
   # Template over Terraform and other config
-  # Deploy Stage 1 Terraform - VPC, Subnets, DNS Nodes
+  # Deploy Stage 1 Terraform - VPC, Subnets, DNS Nodes, Load Balancer
+  # Configure PB/BSN with Terraform, fcct, jq, oc, Pilot Light server, and other basics
   # Deploy Stage 2 Terraform - OCP 4 Bootstrap Node
   # Deploy Stage 3 Terraform - OCP 4 Cluster Nodes
   # Deploy Stage 4 Terraform - Additional Nodes such as GitLab, Minio, NFS, etc

@@ -1,0 +1,17 @@
+---
+
+- name: Retrieve image list
+  ibm.cloudcollection.ibm_is_images_info:
+    ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+    region: "{{ region }}"
+  register: images_list
+  tags:
+    - image_list
+
+- name: Set VM image name/id dictionary fact
+  set_fact:
+    cacheable: True
+    image_dict: "{{ images_list.resource.images |
+      items2dict(key_name='name', value_name='id') }}"
+  tags:
+    - image_list

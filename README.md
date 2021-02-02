@@ -163,6 +163,22 @@ So with that, there are a few prerequisites to using Blue Forge to deploy OCP 4 
 
 ### Architecture
 
-- Single Node OCP to 3 Zone Region HA
-- Deploys a DNS node in every active region
-- Primary DNS node also serves for ignition generation service at `/generate`
+|                      | Zone 1         | Zone 2         | Zone 3         | Additional Notes                                        |
+|----------------------|----------------|----------------|----------------|---------------------------------------------------------|
+| CIDR                 | 10.128.10.0/24 | 10.128.20.0/24 | 10.128.30.0/24 |                                                         |
+| BIND DNS             | 10.128.10.10   | 10.128.20.10   | 10.128.30.10   | Also Pilot Light Servers                                |
+| RH IDM Server        | 10.128.10.11   | 10.128.20.11   | 10.128.30.11   | If enabled, BIND DNS upstream is changed to IDM servers |
+| Control Plane Node   | 10.128.10.20   | 10.128.20.20   | 10.128.30.20   |                                                         |
+|                      | 10.128.10.21   | 10.128.20.21   | 10.128.30.21   | Additional Optional Control Plane Nodes                 |
+| Infrastructure Nodes | 10.128.10.30   | 10.128.20.30   | 10.128.30.30   | Optional Infrastructure Nodes                           |
+|                      | 10.128.10.31   | 10.128.20.31   | 10.128.30.31   | Additional Optional Infrastructure Nodes                |
+| Application Nodes    | 10.128.10.40   | 10.128.20.40   | 10.128.30.40   |                                                         |
+|                      | 10.128.10.41   | 10.128.20.41   | 10.128.30.41   |                                                         |
+|                      | 10.128.10.42   | 10.128.20.42   | 10.128.30.42   |                                                         |
+|                      | 10.128.10.43   | 10.128.20.43   | 10.128.30.43   |                                                         |
+|                      | 10.128.10.44   | 10.128.20.44   | 10.128.30.44   |                                                         |
+| Minio S3 Server      | 10.128.10.61   |                |                |                                                         |
+| GitLab Server        | 10.128.10.62   |                |                |                                                         |
+| NFS Server           | 10.128.10.63   |                |                |                                                         |
+
+TODO: Explore OCS for storage

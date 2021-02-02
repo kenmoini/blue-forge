@@ -3,22 +3,3 @@ resource "ibm_is_vpc" "{{ workshop_shortcode }}_{{ guid }}_vpc" {
   name = "{{ workshop_shortcode }}-{{ guid }}-vpc"
   tags = [ "assetID:vpc", "assetType:vpc", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
 }
-
-# Create a Public Gateway so private subnet nodes can pull updates and whatnot
-resource "ibm_is_public_gateway" "{{ workshop_shortcode }}_{{ guid }}_pubgtw" {
-  depends_on = [ ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc ]
-  name       = "{{ workshop_shortcode }}-{{ guid }}-pubgtw"
-  vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
-  zone       = "{{ regional_zone }}"
-  tags       = [ "assetID:pubgtw", "assetType:pubgtw", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
-}
-
-# Create the Private Subnet
-resource "ibm_is_subnet" "{{ workshop_shortcode }}_{{ guid }}_subnet" {
-  depends_on               = [ ibm_is_public_gateway.{{ workshop_shortcode }}_{{ guid }}_pubgtw ]
-  name                     = "{{ workshop_shortcode }}-{{ guid }}-subnet"
-  vpc                      = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
-  zone                     = "{{ regional_zone }}"
-  total_ipv4_address_count = "{{ vpc_total_ipv4_address_count }}"
-  public_gateway           = ibm_is_public_gateway.{{ workshop_shortcode }}_{{ guid }}_pubgtw.id
-}

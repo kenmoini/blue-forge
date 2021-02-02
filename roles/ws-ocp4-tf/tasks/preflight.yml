@@ -1,0 +1,19 @@
+---
+- name: Create generation directory
+  file:
+    path: "{{ generation_directory }}"
+    state: directory
+
+- name: Install passlib locally
+  pip:
+    name: passlib
+    state: present
+  when: tower_job_id is not defined
+
+- name: Generate Proctor Password Hash
+  command: 'python3 -c ''import passlib.hash; print(passlib.hash.sha512_crypt.hash("{{ proctor_password }}"))'''
+  register: generated_proctor_password_hash
+
+- name: Generate Student Password Hash
+  command: 'python3 -c ''import passlib.hash; print(passlib.hash.sha512_crypt.hash("{{ student_password }}"))'''
+  register: generated_student_password_hash

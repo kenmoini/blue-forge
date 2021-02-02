@@ -1,0 +1,68 @@
+---
+- name: Template out version.tf
+  template:
+    src: terraform/version.tf.j2
+    dest: "{{ tfile_dir }}/version.tf"
+
+- name: Template out variables.tf
+  template:
+    src: terraform/vars.tf.j2
+    dest: "{{ tfile_dir }}/vars.tf"
+
+- name: Template out credentials.tf
+  template:
+    src: terraform/credentials.tf.j2
+    dest: "{{ tfile_dir }}/credentials.tf"
+
+- name: Template out ssh_key.tf
+  template:
+    src: terraform/ssh_key.tf.j2
+    dest: "{{ tfile_dir }}/ssh_key.tf"
+
+- name: Template out vpc.tf
+  template:
+    src: terraform/vpc.tf.j2
+    dest: "{{ tfile_dir }}/vpc.tf"
+
+- name: Template out subnets.tf
+  template:
+    src: terraform/subnets.tf.j2
+    dest: "{{ tfile_dir }}/subnets.tf"
+
+- name: Template out security_groups.tf
+  template:
+    src: terraform/security_groups.tf.j2
+    dest: "{{ tfile_dir }}/security_groups.tf"
+
+- name: Template out Proctor Bastion Cloud Init Config
+  template:
+    src: terraform/cloud_inits/proctor_bastion.yaml.j2
+    dest: "{{ tfile_dir }}/cloud_inits/proctor_bastion.yaml"
+
+- name: Template out proctor_bastion.tf
+  template:
+    src: terraform/proctor_bastion.tf.j2
+    dest: "{{ tfile_dir }}/proctor_bastion.tf"
+
+- name: Template out DNS Cloud Init Config
+  template:
+    src: terraform/cloud_inits/dns_nodes.yaml.j2
+    dest: "{{ tfile_dir }}/cloud_inits/dns_node{{ nodeNum }}.yaml"
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+  loop_control:
+    loop_var: nodeNum
+
+- name: Template out dns_nodes.tf
+  template:
+    src: terraform/dns_nodes.tf.j2
+    dest: "{{ tfile_dir }}/dns_node{{ nodeNum }}.tf"
+  with_sequence: start=1 end="{{ number_of_dns_nodes }}" stride=1
+  loop_control:
+    extended: yes
+    loop_var: nodeNum
+
+- name: Template out main.tf
+  template:
+    src: terraform/main.tf.j2
+    dest: "{{ tfile_dir }}/main.tf"
+

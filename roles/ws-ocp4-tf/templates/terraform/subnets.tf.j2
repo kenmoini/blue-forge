@@ -1,0 +1,20 @@
+{% for specific_zone in zone_list %}
+# Create a Public Gateway so private subnet nodes can pull updates and whatnot
+resource "ibm_is_public_gateway" "{{ workshop_shortcode }}_{{ guid }}_pubgtw{{ loop.index0 }}" {
+  depends_on = [ ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-pubgtw{{ loop.index0 }}"
+  vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+  zone       = "{{ specific_zone }}"
+  tags       = [ "assetID:pubgtw{{ loop.index0 }}", "assetGroup:pubgtw", "assetType:pubgtw", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+}
+
+# Create the Private Subnets
+resource "ibm_is_subnet" "{{ workshop_shortcode }}_{{ guid }}_subnet{{ loop.index0 }}" {
+  depends_on       = [ ibm_is_public_gateway.{{ workshop_shortcode }}_{{ guid }}_pubgtw{{ loop.index0 }} ]
+  name             = "{{ workshop_shortcode }}-{{ guid }}-subnet{{ loop.index0 }}"
+  vpc              = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+  zone             = "{{ specific_zone }}"
+  ipv4_cidr_block  = "{{ private_ip_pools[loop.index0] }}"
+  public_gateway   = ibm_is_public_gateway.{{ workshop_shortcode }}_{{ guid }}_pubgtw{{ loop.index0 }}.id
+}
+{% endfor %}
