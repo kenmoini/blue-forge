@@ -33,3 +33,90 @@
     overwrite: yes
     value: "{{ comp_name_servers }}"
   when: dnsnb_provider == "aws"
+
+- name: DigitalOcean - Set flattened Results Fact base
+  set_fact:
+    check_do_a_records: "{{ (check_do_a_records | default([])) }}"
+    check_do_ns_records: "{{ (check_do_ns_records | default([])) }}"
+    check_do_ns_cumulative_records: "{{ (check_do_ns_cumulative_records | default([])) }}"
+  when: dnsnb_provider == "digitalocean"
+
+- name: DigitalOcean - Check for A Glue Records in DigitalOcean
+  uri:
+    url: "https://api.digitalocean.com/v2/domains/{{ dnsnb_persistent_zone }}/records?type=A&name={{ item.name + '.' + dnsnb_persistent_zone }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ dnsnb_do_pat }}"
+      Accept: application/json
+    status_code: [200, 201]
+  register: curl_digitalocean_check_a_records
+  with_items: "{{ dnsnb_custom_nameservers }}"
+  when: dnsnb_provider == "digitalocean"
+
+- name: DigitalOcean - Set flattened Results Fact
+  set_fact:
+    check_do_a_records: "{{ (check_do_a_records | default([])) + [item.json.domain_records[0].name] }}"
+  with_items: "{{ curl_digitalocean_check_a_records.results }}"
+  when: dnsnb_provider == "digitalocean" and item.json.domain_records|length>0
+
+- name: DigitalOcean - Create A Glue Records in DigitalOcean
+  uri:
+    url: "https://api.digitalocean.com/v2/domains/{{ dnsnb_persistent_zone }}/records"
+    method: POST
+    body_format: json
+    body:
+      type: A
+      name: "{{ item.name }}"
+      data: "{{ item.ip }}"
+      ttl: 1800
+    headers:
+      Authorization: "Bearer {{ dnsnb_do_pat }}"
+      Accept: application/json
+    status_code: [200, 201]
+  register: curl_digitalocean_ns_records
+  with_items: "{{ dnsnb_custom_nameservers }}"
+  when: dnsnb_provider == "digitalocean" and item.name not in check_do_a_records
+
+- name: DigitalOcean - Check for NS Records in DigitalOcean
+  uri:
+    url: "https://api.digitalocean.com/v2/domains/{{ dnsnb_persistent_zone }}/records?type=NS&name={{ dnsnb_delegated_zone + '.' + dnsnb_persistent_zone }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ dnsnb_do_pat }}"
+      Accept: application/json
+    status_code: [200, 201]
+  register: curl_digitalocean_check_ns_records
+  with_items: "{{ dnsnb_custom_nameservers }}"
+  when: dnsnb_provider == "digitalocean"
+
+- name: DigitalOcean - Set flattened Results Fact
+  set_fact:
+    check_do_ns_cumulative_records: "{{ (check_do_ns_cumulative_records | default([])) + [item.json.domain_records] }}"
+  with_items: "{{ curl_digitalocean_check_ns_records.results }}"
+  when: dnsnb_provider == "digitalocean" and item.json.domain_records|length>0
+
+- name: DigitalOcean - Set flattened Results Fact
+  set_fact:
+    check_do_ns_records: "{{ (check_do_ns_records | default([])) + [item.data] }}"
+  with_items: "{{ check_do_ns_cumulative_records }}"
+  when: dnsnb_provider == "digitalocean" and check_do_ns_cumulative_records|length>0
+
+- name: DigitalOcean - Create NS Records in DigitalOcean
+  uri:
+    url: "https://api.digitalocean.com/v2/domains/{{ dnsnb_persistent_zone }}/records"
+    method: POST
+    body_format: json
+    body:
+      type: NS
+      name: "{{ dnsnb_delegated_zone }}"
+      data: "{{ item.name + '.' + dnsnb_persistent_zone }}."
+      ttl: 1800
+    #  grant_type: urn:ibm:params:oauth:grant-type:apikey
+    #  apikey: "{{ ibmcloud_api_key }}"
+    headers:
+      Authorization: "Bearer {{ dnsnb_do_pat }}"
+      Accept: application/json
+    status_code: [200, 201]
+  register: curl_digitalocean_ns_records
+  with_items: "{{ dnsnb_custom_nameservers }}"
+  when: dnsnb_provider == "digitalocean" and ((item.name+'.'+dnsnb_persistent_zone) not in check_do_ns_records)
