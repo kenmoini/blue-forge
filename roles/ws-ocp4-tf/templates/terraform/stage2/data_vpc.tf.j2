@@ -1,0 +1,4 @@
+# Read the VPC
+data "ibm_is_vpc" "{{ workshop_shortcode }}_{{ guid }}_vpc" {
+  name = "{{ workshop_shortcode }}-{{ guid }}-vpc"
+}

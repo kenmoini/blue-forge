@@ -1,0 +1,6 @@
+# Get the Private Subnets
+{% for specific_zone in zone_list %}
+data "ibm_is_subnet" "{{ workshop_shortcode }}_{{ guid }}_subnet{{ loop.index0 }}" {
+  name = "{{ workshop_shortcode }}-{{ guid }}-subnet{{ loop.index0 }}"
+}
+{% endfor %}

@@ -46,8 +46,9 @@
 
 - name: Create terraform cloud init template directory
   file:
-    path: "{{ tfile_dir }}/cloud_inits"
+    path: "{{ tfile_dir }}/{{ item }}"
     state: directory
+  with_items: ['cloud_inits', 'stage1', 'stage2', 'stage3', 'stage4']
 
 - name: Create SSH Key
   community.crypto.openssh_keypair:
@@ -75,7 +76,7 @@
 
 - name: Run Terraform
   community.general.terraform:
-    project_path: "{{ tfile_dir }}"
+    project_path: "{{ tfile_dir }}/stage1/"
     state: present
     force_init: true
     binary_path: "{{ terraform_path }}"
@@ -92,11 +93,16 @@
   include_vars: 
     file: "{{ tfile_dir }}/terraform.tfstate"
     name: tfstate
+  tags:
+    - build_inventory
 
 - name: Filter and find needed information
   set_fact:
     proctor_bastion_vsi_state: "{{ tfstate | community.general.json_query(proctor_bastion_vsi_jq) | community.general.json_query(vsi_filter) | first }}"
     proctor_bastion_fip_state: "{{ tfstate | community.general.json_query(proctor_bastion_fip_jq) | community.general.json_query(fip_filter) | first }}"
+
+    load_balancer_vsi_state: "{{ tfstate | community.general.json_query(load_balancer_vsi_jq) | community.general.json_query(vsi_filter) | first }}"
+    load_balancer_fip_state: "{{ tfstate | community.general.json_query(load_balancer_fip_jq) | community.general.json_query(fip_filter) | first }}"
 
     dns_vsi_state: "{{ tfstate | community.general.json_query(dns_jq) | community.general.json_query(bulk_vsi_filter) | list }}"
     dns_fip_state: "{{ tfstate | community.general.json_query(dns_jq) | community.general.json_query(bulk_fip_filter) | list }}"
@@ -109,7 +115,12 @@
     proctor_bastion_fip_jq: "resources[?name=='{{ workshop_shortcode }}_{{ guid }}_pb_fip']"
     proctor_bastion_vsi_jq: "resources[?name=='{{ workshop_shortcode }}_{{ guid }}_pb_vsi']"
 
+    load_balancer_fip_jq: "resources[?name=='{{ workshop_shortcode }}_{{ guid }}_lb_fip']"
+    load_balancer_vsi_jq: "resources[?name=='{{ workshop_shortcode }}_{{ guid }}_lb_vsi']"
+
     dns_jq: "resources[?name.contains(@,'{{ workshop_shortcode }}_{{ guid }}_ns')]"
+  tags:
+    - build_inventory
 
 - name: Add Proctor Bastion VSI to Ansible inventory
   add_host:
@@ -125,12 +136,31 @@
     ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
     ansible_set_hostname: "bastion"
     ansible_set_fqdn: "bastion.{{ guid }}.{{ domain }}"
-    #ansible_external_ip: "{{ pb_fip_create_output.resource.address }}"
     ansible_external_ip: "{{ proctor_bastion_fip_state }}"
-    #ansible_internal_ip: "{{ pb_vsi_create_output.resource.primary_network_interface[0]['primary_ipv4_address'] }}"
     ansible_internal_ip: "{{ proctor_bastion_vsi_state }}"
   tags:
+    - build_inventory
     - proctor_bastion
+
+- name: Add Load Balancer VSI to Ansible inventory
+  add_host:
+    name: "{{ load_balancer_fip_state }}"
+    ansible_user: root
+    groups:
+      - lb_vsi
+      - workshop_vsi
+      - ext_workshop_vsi
+      - internal_workshop_vsi
+    ansible_ssh_user: root
+    ansible_ssh_extra_args: -o StrictHostKeyChecking=no
+    ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
+    ansible_set_hostname: "bastion"
+    ansible_set_fqdn: "bastion.{{ guid }}.{{ domain }}"
+    ansible_external_ip: "{{ load_balancer_fip_state }}"
+    ansible_internal_ip: "{{ load_balancer_vsi_state }}"
+  tags:
+    - build_inventory
+    - load_balancer
 
 - name: Add DNS Node to dns_vsi, workshop_vsi, internal_workshop_vsi, and ext_workshop_vsi groups
   add_host:
@@ -153,4 +183,5 @@
   loop_control:
     extended: yes
   tags:
+    - build_inventory
     - dns_nodes

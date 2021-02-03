@@ -2,31 +2,31 @@
 ## Generate Security Groups
 
 resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_proctor_sg" {
-  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0 ]
   name       = "{{ workshop_shortcode }}-{{ guid }}-proctor-sg"
   vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
 }
 
 resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_lb_sg" {
-  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0 ]
   name       = "{{ workshop_shortcode }}-{{ guid }}-lb-sg"
   vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
 }
 
 resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_control_plane_sg" {
-  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0 ]
   name       = "{{ workshop_shortcode }}-{{ guid }}-control-plane-sg"
   vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
 }
 
 resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_app_node_sg" {
-  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0 ]
   name       = "{{ workshop_shortcode }}-{{ guid }}-app-node-sg"
   vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
 }
 
 resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_dns_sg" {
-  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet ]
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0 ]
   name       = "{{ workshop_shortcode }}-{{ guid }}-dns-sg"
   vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
 }

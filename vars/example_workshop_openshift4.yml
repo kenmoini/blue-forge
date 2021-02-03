@@ -14,9 +14,11 @@ proctor_password: changeme987
 student_password: changeme123
 student_count: 2
 
+rhcos_image_cos_link: cos://us-east/rhcos-test/rhcos-qemu.x86_64.qcow2
+
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
 
-region: us-south
+region: us-east
 
 # dnsnb_provider: aws, digitalocean
 dnsnb_provider: aws

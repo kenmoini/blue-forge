@@ -7,6 +7,7 @@ resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_pb_vsi" {
   primary_network_interface {
     subnet = ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0.id
     security_groups = [ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_proctor_sg.id]
+    primary_ipv4_address = "{{ proctor_internal_ip }}"
   }
 
   vpc  = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
@@ -18,7 +19,7 @@ resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_pb_vsi" {
     name = "{{ workshop_shortcode }}-{{ guid }}-pb-bootvol"
   }
 
-  user_data = "${file("./cloud_inits/proctor_bastion.yaml")}"
+  user_data = file("../cloud_inits/proctor_bastion.yaml")
 }
 resource "ibm_is_floating_ip" "{{ workshop_shortcode }}_{{ guid }}_pb_fip" {
   depends_on = [ ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_pb_vsi ]

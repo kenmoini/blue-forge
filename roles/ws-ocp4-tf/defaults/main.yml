@@ -21,6 +21,9 @@ proctor_bastion_vsi_image: ibm-redhat-8-1-minimal-amd64-1
 proctor_username: workshopProctor
 proctor_password: noPrizeFor5thBestCloud
 
+load_balancer_vsi_profile: cx2-2x4
+load_balancer_vsi_image: ibm-centos-8-2-minimal-amd64-2
+
 coreos_user: core
 coreos_user_password: noPrizeFor5thBestCloud
 
@@ -49,6 +52,15 @@ private_ip_pools:
   - 10.128.10.0/24
   - 10.128.20.0/24
   - 10.128.30.0/24
+
+proctor_internal_ip: 10.128.10.4
+
+load_balancer_internal_ip: 10.128.10.9
+
+dns_server_internal_ip:
+  - 10.128.10.10
+  - 10.128.20.10
+  - 10.128.30.10
 
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
 

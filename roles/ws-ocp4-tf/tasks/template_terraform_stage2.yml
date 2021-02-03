@@ -1,0 +1,35 @@
+---
+- name: Template out version.tf
+  template:
+    src: terraform/version.tf.j2
+    dest: "{{ tfile_dir }}/stage2/version.tf"
+
+- name: Template out variables.tf
+  template:
+    src: terraform/vars.tf.j2
+    dest: "{{ tfile_dir }}/stage2/vars.tf"
+
+- name: Template out credentials.tf
+  template:
+    src: terraform/credentials.tf.j2
+    dest: "{{ tfile_dir }}/stage2/credentials.tf"
+
+- name: Template out ssh_key.tf
+  template:
+    src: terraform/ssh_key.tf.j2
+    dest: "{{ tfile_dir }}/stage2/ssh_key.tf"
+
+- name: Template out data_vpc.tf
+  template:
+    src: terraform/stage2/data_vpc.tf.j2
+    dest: "{{ tfile_dir }}/stage2/data_vpc.tf"
+
+- name: Template out data_subnets.tf
+  template:
+    src: terraform/stage2/data_subnets.tf.j2
+    dest: "{{ tfile_dir }}/stage2/data_subnets.tf"
+
+- name: Template out data_security_groups.tf
+  template:
+    src: terraform/stage2/data_security_groups.tf.j2
+    dest: "{{ tfile_dir }}/stage2/data_security_groups.tf"

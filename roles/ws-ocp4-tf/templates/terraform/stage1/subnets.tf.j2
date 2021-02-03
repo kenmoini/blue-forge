@@ -8,9 +8,18 @@ resource "ibm_is_public_gateway" "{{ workshop_shortcode }}_{{ guid }}_pubgtw{{ l
   tags       = [ "assetID:pubgtw{{ loop.index0 }}", "assetGroup:pubgtw", "assetType:pubgtw", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
 }
 
+# Create Address Prefix
+resource "ibm_is_vpc_address_prefix" "{{ workshop_shortcode }}_{{ guid }}_address_prefix{{ loop.index0 }}" {
+  depends_on = [ ibm_is_public_gateway.{{ workshop_shortcode }}_{{ guid }}_pubgtw{{ loop.index0 }} ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-address-prefix{{ loop.index0 }}"
+  zone       = "{{ specific_zone }}"
+  vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+  cidr       = "{{ private_ip_pools[loop.index0] }}"
+}
+
 # Create the Private Subnets
 resource "ibm_is_subnet" "{{ workshop_shortcode }}_{{ guid }}_subnet{{ loop.index0 }}" {
-  depends_on       = [ ibm_is_public_gateway.{{ workshop_shortcode }}_{{ guid }}_pubgtw{{ loop.index0 }} ]
+  depends_on       = [ ibm_is_vpc_address_prefix.{{ workshop_shortcode }}_{{ guid }}_address_prefix{{ loop.index0 }} ]
   name             = "{{ workshop_shortcode }}-{{ guid }}-subnet{{ loop.index0 }}"
   vpc              = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
   zone             = "{{ specific_zone }}"

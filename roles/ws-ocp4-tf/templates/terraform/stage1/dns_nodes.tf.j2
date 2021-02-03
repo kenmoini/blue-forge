@@ -8,8 +8,9 @@ resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_
   profile = "{{ dns_vsi_profile }}"
 
   primary_network_interface {
-    subnet = ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet{{ ansible_loop.index0 }}.id
-    security_groups = [ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg.id]
+    subnet               = ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet{{ ansible_loop.index0 }}.id
+    security_groups      = [ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_dns_sg.id]
+    primary_ipv4_address = "{{ dns_server_internal_ip[ ansible_loop.index0 ] }}"
   }
 
   vpc  = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
@@ -20,6 +21,8 @@ resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_
   boot_volume {
     name = "{{ workshop_shortcode }}-{{ guid }}-ns{{ nodeNum }}-bootvol"
   }
+
+  user_data = file("../cloud_inits/dns_node{{ nodeNum }}.yaml")
 }
 resource "ibm_is_floating_ip" "{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_fip" {
   depends_on = [ ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_ns{{ nodeNum }}_vsi ]

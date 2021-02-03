@@ -1,0 +1,22 @@
+#############################################################################
+## Get Security Groups
+
+data "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_proctor_sg" {
+  name       = "{{ workshop_shortcode }}-{{ guid }}-proctor-sg"
+}
+
+data "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_lb_sg" {
+  name       = "{{ workshop_shortcode }}-{{ guid }}-lb-sg"
+}
+
+data "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_control_plane_sg" {
+  name       = "{{ workshop_shortcode }}-{{ guid }}-control-plane-sg"
+}
+
+data "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_app_node_sg" {
+  name       = "{{ workshop_shortcode }}-{{ guid }}-app-node-sg"
+}
+
+data "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_dns_sg" {
+  name       = "{{ workshop_shortcode }}-{{ guid }}-dns-sg"
+}

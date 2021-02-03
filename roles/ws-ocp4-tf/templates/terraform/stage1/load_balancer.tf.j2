@@ -1,0 +1,29 @@
+resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_lb_vsi" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg ]
+  name    = "{{ workshop_shortcode }}-{{ guid }}-lb-vsi"
+  image   = "{{ image_dict[load_balancer_vsi_image] }}"
+  profile = "{{ load_balancer_vsi_profile }}"
+
+  primary_network_interface {
+    subnet = ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0.id
+    security_groups = [ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_lb_sg.id]
+    primary_ipv4_address = "{{ load_balancer_internal_ip }}"
+  }
+
+  vpc  = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+  zone = "{{ zone_list[0] }}"
+  keys = [ibm_is_ssh_key.{{ workshop_shortcode }}_{{ guid }}_ssh_key.id]
+  tags = [ "assetID:lb-vsi", "assetType:vsi", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+
+  boot_volume {
+    name = "{{ workshop_shortcode }}-{{ guid }}-lb-bootvol"
+  }
+
+  user_data = file("./cloud_inits/load_balancer.yaml")
+}
+resource "ibm_is_floating_ip" "{{ workshop_shortcode }}_{{ guid }}_lb_fip" {
+  depends_on = [ ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_lb_vsi ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-lb-fip"
+  target     = ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_lb_vsi.primary_network_interface[0].id
+  tags       = [ "assetID:lb-fip", "assetType:fip", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+}

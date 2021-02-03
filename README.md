@@ -166,7 +166,9 @@ So with that, there are a few prerequisites to using Blue Forge to deploy OCP 4 
 |                      | Zone 1         | Zone 2         | Zone 3         | Additional Notes                                        |
 |----------------------|----------------|----------------|----------------|---------------------------------------------------------|
 | CIDR                 | 10.128.10.0/24 | 10.128.20.0/24 | 10.128.30.0/24 |                                                         |
-| BIND DNS             | 10.128.10.10   | 10.128.20.10   | 10.128.30.10   | Also Pilot Light Servers                                |
+| Proctor Bastion      | 10.128.10.4    |                |                |                                                         |
+| Load Balancer        | 10.128.10.9    |                |                |                                                         |
+| DNS                  | 10.128.10.10   | 10.128.20.10   | 10.128.30.10   | Also Pilot Light Servers                                |
 | RH IDM Server        | 10.128.10.11   | 10.128.20.11   | 10.128.30.11   | If enabled, BIND DNS upstream is changed to IDM servers |
 | Control Plane Node   | 10.128.10.20   | 10.128.20.20   | 10.128.30.20   |                                                         |
 |                      | 10.128.10.21   | 10.128.20.21   | 10.128.30.21   | Additional Optional Control Plane Nodes                 |
