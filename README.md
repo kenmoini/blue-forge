@@ -1,5 +1,7 @@
 # Blue Forge - Ansible and Terraform powered IBM Cloud Deployments
 
+The following QuickStart Examples are great to do an initial test of your IBM Cloud account access - for more robust environment automation skip down to the ***Workshops*** section.
+
 ## QuickStart Examples - Prerequisites
 
 - An SSH key pair located at `~/.ssh/id_rsa{.pub}` - otherwise, modify `vars/examples.yml` to reflect the path to your key pair
@@ -27,16 +29,19 @@ ansible-playbook example_create_simple_vm_ssh.yaml # to test basic functions
 ansible-playbook example_destroy_simple_vm_ssh.yaml # to undo test of basic functions
 ```
 
+---
+
 ## Good tl;dr things to know
 
 1. The IBM Cloud Ansible Collection/Modules seem to be built off of and use Terraform to do most of the heavy lifting, the Python here for the Ansible modules basically acts as a bridge to Terraform.  This seems to be a considerable bottleneck, if you're looking for performant interaction with the IBM Cloud you may want to automate via their API or CLI.
 2. IBM Cloud has a few different set of cloud offerings, some of which can be used together, some of which cannot fully.
     - There is a "Classic Infrastructure" Cloud, or the v1 IBM Cloud, based on the SoftLayer acquisition.  It's a pretty simple cloud, not as robust as the newer cloud services but still offer a lot of powerful capabilities.  If you're used to DigitalOcean/Linode sort of offerings, these services will seem familiar to you.
     - The newer Cloud service offerings will have things such as tagging, and managing services into Resource Groups, etc.  If you're used to AWS/Azure/GCP this will seem a bit more familiar, and includes a lot of the newer PaaS/SaaS offerings like OpenShift, Serverless, VPCs, etc.
-3. If you're here via RHPDS/OpenTLC/Project Tatooine, the IBM Cloud environment doesn't have DNS services, you'll need to deploy that to some nodes yourself and coordinate the sub-zones.  There are assets in the `ws-kubernetes101` role that show how do deploy the DNS nodes, glue it together with an external zone hosted at AWS Route53 or DigitalOcean, and configure the other nodes to access it via split-horizon resolution.
+3. If you're here via RHPDS Open Environments, the IBM Cloud environment doesn't have DNS services, you'll need to deploy that to some nodes yourself and coordinate the sub-zones.  There are assets in the `ws-kubernetes101` role that show how do deploy the DNS nodes, glue it together with an external zone hosted at AWS Route53 or DigitalOcean, and configure the other nodes to access it via split-horizon resolution.
+
 ---
 
-## Using in Ansible Tower
+## Using Blue Forge in Ansible Tower
 
 You'll need to add the passlib package to your Ansible Tower virtualenv - do the following as root:
 
@@ -47,13 +52,16 @@ You'll need to add the passlib package to your Ansible Tower virtualenv - do the
 # deactivate
 ```
 
-## Workshops
+---
+
+## Workshop Environments
 
 The primary workloads Blue Forge supports are ones the deploy and configure workshop environments.  These are the workshops this platform supports on the IBM Cloud:
 
-- [Working] Containers 101
-- [Beta] Kubernetes 101
+- [95%] Containers 101 - Needs curriculum compiled and associated
+- [80%] Kubernetes 101 - Needs lb config and optional k8s provisioning
 - [Alpha] Ansible Automation - needs some post-config work to make an easier workshop
+- [WIP] OpenShift 4 HA Cluster
 - [TBA] Ansible for Windows
 - [TBA] DevOps on OpenShift
 - [TBA] DevSecOps - Secure Software Factories
@@ -150,18 +158,16 @@ ansible-playbook -e "@ansible_automation.extra_vars.yml" workshop_destroy_ansibl
 
 ## OpenShift in IBM Cloud - The Hard Way!
 
-If you're utilizing this repo in Project Tatooine and wanting to deploy OpenShift there are a number of challenges:
+If you're utilizing this repo with RHPDS Open Environments and wanting to deploy OpenShift there are a number of challenges:
 
 1. No Fedora/Red Hat CoreOS Instance Images available
 2. No access to Cloud Object Storage to upload custom image - need to use a personal/shared COS resource that's publicly available
 3. No other mechanism for modifying VPC networking specs such as DNS/PXE.
-4. No way to use anything other than cloud-init, like Ignition which is what CoreOS uses...
+4. No way to use anything other than cloud-init, like Afterburner or Ignition which is what CoreOS uses...
 
-So with that, there are a few prerequisites to using Blue Forge to deploy OCP 4 to IBM Cloud:
+So with that, there are a few prerequisites to using Blue Forge to deploy OpenShift 4 to IBM Cloud:
 
-1. Download the RHCOS QEMU QCow, use `guestfish` to modify the Grub boot kernel arguments and dracut to use DHCP and look for DNS at `10.128.10.10`, `10.128.20.10`, and `10.128.30.10` - this allows any IBM Instance created with the subsequent custom image to generate/pull an Ignition file
-
-### Architecture
+### 1. Architect the full environment with Static IPs
 
 |                      | Zone 1         | Zone 2         | Zone 3         | Additional Notes                                        |
 |----------------------|----------------|----------------|----------------|---------------------------------------------------------|
@@ -175,12 +181,58 @@ So with that, there are a few prerequisites to using Blue Forge to deploy OCP 4 
 | Infrastructure Nodes | 10.128.10.30   | 10.128.20.30   | 10.128.30.30   | Optional Infrastructure Nodes                           |
 |                      | 10.128.10.31   | 10.128.20.31   | 10.128.30.31   | Additional Optional Infrastructure Nodes                |
 | Application Nodes    | 10.128.10.40   | 10.128.20.40   | 10.128.30.40   |                                                         |
-|                      | 10.128.10.41   | 10.128.20.41   | 10.128.30.41   |                                                         |
+|                      | 10.128.10.41   | 10.128.20.41   | 10.128.30.41   | Additional Optional Application Nodes, in sets of 3     |
 |                      | 10.128.10.42   | 10.128.20.42   | 10.128.30.42   |                                                         |
 |                      | 10.128.10.43   | 10.128.20.43   | 10.128.30.43   |                                                         |
 |                      | 10.128.10.44   | 10.128.20.44   | 10.128.30.44   |                                                         |
+|                      | 10.128.10.45   | 10.128.20.45   | 10.128.30.45   |                                                         |
 | Minio S3 Server      | 10.128.10.61   |                |                |                                                         |
 | GitLab Server        | 10.128.10.62   |                |                |                                                         |
 | NFS Server           | 10.128.10.63   |                |                |                                                         |
 
-TODO: Explore OCS for storage
+***TODO***: Explore OCS for storage
+
+### 2. Create a custom RHCOS Image for IBM Cloud
+
+1. Download the [RHCOS QEMU QCow](https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/latest/latest/)
+2. Use `guestfish` to modify the Grub boot kernel arguments and dracut to:
+    - Use DHCP
+    - Manually set DNS at `10.128.10.10`, `10.128.20.10`, and `10.128.30.10` - we'll deploy a few DIY DNS servers to map things properly
+    - Have RHCOS pull ignition from the first DNS server which runs a service called [Pilot Light](https://github.com/kenmoini/pilot-light) at port 8082 that generates and serves Ignition files based on Reverse DNS/Hostname mappings
+
+    The whole set of commands looks like this:
+
+    ```bash
+    wget https://mirror.openshift.com/pub/openshift-v4/dependencies/rhcos/latest/latest/rhcos-qemu.x86_64.qcow2.gz
+    gunzip rhcos-qemu.x86_64.qcow2.gz
+    guestfish -a rhcos-qemu.x86_64.qcow2
+    
+    ><fs> launch
+    ><fs> mount /dev/sda1 /
+    ><fs> vi /ignition.firstboot
+    ```
+
+    INSERT the following into the /ignition.firstboot file:
+    
+    ```
+    set ignition_network_kcmdline='rd.neednet=1 ip=dhcp nameserver=10.128.10.10 nameserver=10.128.20.10 nameserver=10.128.30.10 coreos.inst.ignition_url=http://10.128.10.10:8082/    ignition-generator'
+    ```
+    
+    Then `ESC` and `:wq` out of INSERT mode and vi.  Exit guestfish with the following:
+    
+    ```bash
+    ><fs> shutdown
+    ><fs> exit
+    ```
+
+3. Now with that modified QCow2 image, you can upload it to a Cloud Object Store bucket in your personal IBM Cloud account.  Make sure to make the image publicly available if you're accessing from a different account such as one provisioned by RHPDS.  You'll need the `cos://` link.
+
+### 3. Deploy with Blue Forge
+
+Blue Forge's OpenShift deployments are already architected with the above layout, and will stage the infrastructure in the proper order.
+
+All that you need to bring is: 
+
+1. A modified RHCOS image `cos://` link
+2. An IBM Cloud API Key
+3. External DNS provided by AWS or DigitalOcean
