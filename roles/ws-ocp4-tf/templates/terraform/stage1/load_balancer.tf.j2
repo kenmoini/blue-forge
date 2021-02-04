@@ -19,7 +19,7 @@ resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_lb_vsi" {
     name = "{{ workshop_shortcode }}-{{ guid }}-lb-bootvol"
   }
 
-  user_data = file("./cloud_inits/load_balancer.yaml")
+  user_data = file("../cloud_inits/load_balancer.yaml")
 }
 resource "ibm_is_floating_ip" "{{ workshop_shortcode }}_{{ guid }}_lb_fip" {
   depends_on = [ ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_lb_vsi ]
