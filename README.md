@@ -215,7 +215,7 @@ So with that, there are a few prerequisites to using Blue Forge to deploy OpenSh
     INSERT the following into the /ignition.firstboot file:
     
     ```
-    set ignition_network_kcmdline='rd.neednet=1 ip=dhcp nameserver=10.128.10.10 nameserver=10.128.20.10 nameserver=10.128.30.10 coreos.inst.ignition_url=http://10.128.10.10:8082/    ignition-generator'
+    set ignition_network_kcmdline='rd.neednet=1 ip=dhcp nameserver=10.128.10.10 nameserver=10.128.20.10 nameserver=10.128.30.10 coreos.inst.ignition_url=http://10.128.10.10:8082/ignition-generator'
     ```
     
     Then `ESC` and `:wq` out of INSERT mode and vi.  Exit guestfish with the following:
@@ -233,6 +233,7 @@ Blue Forge's OpenShift deployments are already architected with the above layout
 
 All that you need to bring is: 
 
-1. A modified RHCOS image `cos://` link
+1. A modified RHCOS image `cos://` link - you may have a friend who has one they can share...
 2. An IBM Cloud API Key
 3. External DNS provided by AWS or DigitalOcean
+4. Red Hat Cloud Pull Secret for OpenShift
