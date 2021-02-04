@@ -28,7 +28,7 @@ zones:
         - name: apps
           ttl: 6400
           value: {{ load_balancer_vsi_state }}
-        - name: '*.apps
+        - name: '*.apps'
           ttl: 6400
           value: {{ load_balancer_vsi_state }}
 
@@ -61,6 +61,6 @@ zones:
         - name: apps
           ttl: 6400
           value: {{ load_balancer_fip_state }}
-        - name: '*.apps
+        - name: '*.apps'
           ttl: 6400
           value: {{ load_balancer_fip_state }}
