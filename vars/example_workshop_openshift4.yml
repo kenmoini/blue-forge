@@ -15,6 +15,7 @@ student_password: changeme123
 student_count: 2
 
 rhcos_image_cos_link: cos://us-east/rhcos-test/rhcos-qemu.x86_64.qcow2
+ocp4_pull_secret: '{"auth":"longJSONStringHere..."}'
 
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
 
