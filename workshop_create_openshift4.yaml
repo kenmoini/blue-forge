@@ -37,9 +37,124 @@
       when: dnsnb_provider is defined
       tags:
         - dnsnb
-  # Template over Terraform and other config
-  # Deploy Stage 1 Terraform - VPC, Subnets, DNS Nodes, Load Balancer
-  # Configure PB/BSN with Terraform, fcct, jq, oc, Pilot Light server, and other basics
+
+- name: Connect to DNS VSIs and set configuration
+  hosts: dns_vsi
+  collections:
+    - ansible.posix
+  gather_facts: true
+  tasks:
+    - name: Configure DNS servers - FirewallD
+      include_role:
+        name: kenmoini.firewalld
+      tags:
+        - dns_configuration
+        - firewalld
+      vars:
+        force_restart_of_firewalld: true
+        firewalld_services:
+          - ssh
+          - cockpit
+        firewalld_ports:
+          - "53/tcp"
+          - "53/udp"
+          - "8082/tcp"
+
+    - name: Configure DNS servers - Cockpit
+      include_role:
+        name: kenmoini.cockpit
+      tags:
+        - dns_configuration
+        - cockpit
+
+    - name: Pull in zones variable
+      include_vars:
+        file: "{{ tfile_dir }}/zones.yaml"
+      tags:
+        - dns_configuration
+        - zones_configuration
+
+    - name: Configure DNS servers
+      include_role:
+        name: configureDNSNodes
+      tags:
+        - dns_configuration
+        - dns_daemon_configuration
+
+    - name: Configure DNS Nodes as Pilot Light servers
+      include_role:
+        name: pilot-light-server
+      vars:
+        installConfig_sshKey: "{{ lookup('file', generation_directory+'/id_ssh_rsa.pub') }}"
+        installConfig_pullSecret: "{{ ocp4_pull_secret }}"
+        installConfig_baseDomain: "{{ domain }}"
+        installConfig_name: "{{ guid }}"
+        installConfig_controlPlaneCount: "{{ ocp_control_plane_count }}"
+
+- name: Connect to new external VSIs and set base system updates
+  hosts: ext_workshop_vsi
+  collections:
+    - ansible.posix
+  gather_facts: true
+  tasks:
+    - name: Double check on updates
+      include_role:
+        name: baseLinuxUpdate
+      vars:
+        reboot_after_kernel_update: true
+      tags:
+        - global_configuration
+        - baseLinuxUpdate
+
+    - name: Configure FirewallD
+      include_role:
+        name: kenmoini.firewalld
+      tags:
+        - global_configuration
+        - firewalld
+      vars:
+        force_restart_of_firewalld: true
+        firewalld_services:
+          - ssh
+          - cockpit
+          - http
+          - https
+
+    - name: Configure Cockpit
+      include_role:
+        name: kenmoini.cockpit
+      tags:
+        - global_configuration
+        - cockpit
+
+    - name: Set proper hostnames
+      include_role:
+        name: setSystemDNS
+        tasks_from: set_hostnames.yaml
+      tags:
+        - set_system_dns
+        - set_hostnames
+
+    - name: Set up System DNS vars
+      include_role:
+        name: setSystemDNS
+        tasks_from: template_system_dns_vars.yaml
+      with_items: "{{ groups['dns_vsi'] }}"
+      tags:
+        - set_system_dns
+
+    - name: Set system DNS to deployed servers
+      include_role:
+        name: setSystemDNS
+      when: inventory_hostname not in groups.dns_vsi
+      vars:
+        system_search_domain: "{{ guid }}.{{ domain }}"
+      tags:
+        - set_system_dns
+  # [DONE] Template over Terraform and other config
+  # [DONE] Deploy Stage 1 Terraform - VPC, Subnets, DNS Nodes, Load Balancer
+  # [DONE] Configure DNS
+  # [DONE] Configure Pilot Light Servers
   # Deploy Stage 2 Terraform - OCP 4 Bootstrap Node
   # Deploy Stage 3 Terraform - OCP 4 Cluster Nodes
   # Deploy Stage 4 Terraform - Additional Nodes such as GitLab, Minio, NFS, etc
