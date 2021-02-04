@@ -1,5 +1,7 @@
 ---
 # tasks file for dnsnb
+###########################################################################################################
+## AWS Route53
 
 - name: AWS - Create A Glue Records in AWS Route53
   community.aws.route53:
@@ -34,11 +36,15 @@
     value: "{{ comp_name_servers }}"
   when: dnsnb_provider == "aws"
 
+###########################################################################################################
+## DigitalOcean Domains - A Records
+
 - name: DigitalOcean - Set flattened Results Fact base
   set_fact:
     check_do_a_records: "{{ (check_do_a_records | default([])) }}"
+    check_do_a_record_ids: "{{ (check_do_a_record_ids | default([])) }}"
     check_do_ns_records: "{{ (check_do_ns_records | default([])) }}"
-    check_do_ns_cumulative_records: "{{ (check_do_ns_cumulative_records | default([])) }}"
+    check_do_ns_record_ids: "{{ (check_do_ns_record_ids | default([])) }}"
   when: dnsnb_provider == "digitalocean"
 
 - name: DigitalOcean - Check for A Glue Records in DigitalOcean
@@ -56,8 +62,25 @@
 - name: DigitalOcean - Set flattened Results Fact
   set_fact:
     check_do_a_records: "{{ (check_do_a_records | default([])) + [item.json.domain_records[0].name] }}"
+    check_do_a_record_ids: "{{ (check_do_a_record_ids | default([])) + [item.json.domain_records[0].id] }}"
   with_items: "{{ curl_digitalocean_check_a_records.results }}"
   when: dnsnb_provider == "digitalocean" and item.json.domain_records|length>0
+
+- name: DigitalOcean - Delete A Records in DigitalOcean for good measure
+  uri:
+    url: "https://api.digitalocean.com/v2/domains/{{ dnsnb_persistent_zone }}/records/{{ item }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ dnsnb_do_pat }}"
+      Accept: application/json
+    status_code: [204]
+  with_items: "{{ check_do_a_record_ids }}"
+  when: dnsnb_provider == "digitalocean" and check_do_a_record_ids|length>0
+
+- name: Pause for 3 seconds for the DO DNS API to catch up
+  pause:
+    seconds: 3
+  when: dnsnb_provider == "digitalocean" and check_do_a_record_ids|length>0
 
 - name: DigitalOcean - Create A Glue Records in DigitalOcean
   uri:
@@ -75,7 +98,10 @@
     status_code: [200, 201]
   register: curl_digitalocean_ns_records
   with_items: "{{ dnsnb_custom_nameservers }}"
-  when: dnsnb_provider == "digitalocean" and item.name not in check_do_a_records
+  when: dnsnb_provider == "digitalocean"
+
+###########################################################################################################
+## DigitalOcean Domains - NS Records
 
 - name: DigitalOcean - Check for NS Records in DigitalOcean
   uri:
@@ -86,20 +112,30 @@
       Accept: application/json
     status_code: [200, 201]
   register: curl_digitalocean_check_ns_records
-  with_items: "{{ dnsnb_custom_nameservers }}"
   when: dnsnb_provider == "digitalocean"
 
 - name: DigitalOcean - Set flattened Results Fact
   set_fact:
-    check_do_ns_cumulative_records: "{{ (check_do_ns_cumulative_records | default([])) + [item.json.domain_records] }}"
-  with_items: "{{ curl_digitalocean_check_ns_records.results }}"
-  when: dnsnb_provider == "digitalocean" and item.json.domain_records|length>0
-
-- name: DigitalOcean - Set flattened Results Fact
-  set_fact:
     check_do_ns_records: "{{ (check_do_ns_records | default([])) + [item.data] }}"
-  with_items: "{{ check_do_ns_cumulative_records }}"
-  when: dnsnb_provider == "digitalocean" and check_do_ns_cumulative_records|length>0
+    check_do_ns_record_ids: "{{ (check_do_ns_record_ids | default([])) + [item.id] }}"
+  with_items: "{{ curl_digitalocean_check_ns_records.json.domain_records }}"
+  when: dnsnb_provider == "digitalocean" and curl_digitalocean_check_ns_records.json.domain_records|length>0
+
+- name: DigitalOcean - Delete NS Records in DigitalOcean for good measure
+  uri:
+    url: "https://api.digitalocean.com/v2/domains/{{ dnsnb_persistent_zone }}/records/{{ item }}"
+    method: DELETE
+    headers:
+      Authorization: "Bearer {{ dnsnb_do_pat }}"
+      Accept: application/json
+    status_code: [204]
+  with_items: "{{ check_do_ns_record_ids }}"
+  when: dnsnb_provider == "digitalocean" and check_do_ns_records|length>0
+
+- name: Pause for 3 seconds for the DO DNS API to catch up
+  pause:
+    seconds: 3
+  when: dnsnb_provider == "digitalocean" and check_do_ns_records|length>0
 
 - name: DigitalOcean - Create NS Records in DigitalOcean
   uri:
@@ -111,12 +147,10 @@
       name: "{{ dnsnb_delegated_zone }}"
       data: "{{ item.name + '.' + dnsnb_persistent_zone }}."
       ttl: 1800
-    #  grant_type: urn:ibm:params:oauth:grant-type:apikey
-    #  apikey: "{{ ibmcloud_api_key }}"
     headers:
       Authorization: "Bearer {{ dnsnb_do_pat }}"
       Accept: application/json
     status_code: [200, 201]
   register: curl_digitalocean_ns_records
   with_items: "{{ dnsnb_custom_nameservers }}"
-  when: dnsnb_provider == "digitalocean" and ((item.name+'.'+dnsnb_persistent_zone) not in check_do_ns_records)
+  when: dnsnb_provider == "digitalocean"
