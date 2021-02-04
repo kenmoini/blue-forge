@@ -89,9 +89,9 @@
   tags:
     - run_terraform
 
-- name: Pull in terraform state file
+- name: Pull in stage 1 Terraform state file
   include_vars: 
-    file: "{{ tfile_dir }}/terraform.tfstate"
+    file: "{{ tfile_dir }}/stage1/terraform.tfstate"
     name: tfstate
   tags:
     - build_inventory
@@ -154,8 +154,8 @@
     ansible_ssh_user: root
     ansible_ssh_extra_args: -o StrictHostKeyChecking=no
     ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
-    ansible_set_hostname: "bastion"
-    ansible_set_fqdn: "bastion.{{ guid }}.{{ domain }}"
+    ansible_set_hostname: "lb"
+    ansible_set_fqdn: "lb.{{ guid }}.{{ domain }}"
     ansible_external_ip: "{{ load_balancer_fip_state }}"
     ansible_internal_ip: "{{ load_balancer_vsi_state }}"
   tags:
