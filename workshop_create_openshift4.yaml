@@ -155,6 +155,7 @@
   # [DONE] Deploy Stage 1 Terraform - VPC, Subnets, DNS Nodes, Load Balancer
   # [DONE] Configure DNS
   # [DONE] Configure Pilot Light Servers
+  # Configure Load Balancer
   # Deploy Stage 2 Terraform - OCP 4 Bootstrap Node
   # Deploy Stage 3 Terraform - OCP 4 Cluster Nodes
   # Deploy Stage 4 Terraform - Additional Nodes such as GitLab, Minio, NFS, etc

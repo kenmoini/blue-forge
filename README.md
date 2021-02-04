@@ -173,6 +173,7 @@ So with that, there are a few prerequisites to using Blue Forge to deploy OpenSh
 |----------------------|----------------|----------------|----------------|---------------------------------------------------------|
 | CIDR                 | 10.128.10.0/24 | 10.128.20.0/24 | 10.128.30.0/24 |                                                         |
 | Proctor Bastion      | 10.128.10.4    |                |                |                                                         |
+| Bootstrap Node       | 10.128.10.7    |                |                |                                                         |
 | Load Balancer        | 10.128.10.9    |                |                |                                                         |
 | DNS                  | 10.128.10.10   | 10.128.20.10   | 10.128.30.10   | Also Pilot Light Servers                                |
 | RH IDM Server        | 10.128.10.11   | 10.128.20.11   | 10.128.30.11   | If enabled, BIND DNS upstream is changed to IDM servers |
