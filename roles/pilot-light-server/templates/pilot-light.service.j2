@@ -1,0 +1,14 @@
+[Unit]
+Description=Pilot Light Ignition Generation Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Another Type: forking
+TimeoutStartSec=0
+ExecStart={{ pilot_light_bin_path }}/pilot-light -config {{ pilot_light_conf_path }}/pilot-light.conf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

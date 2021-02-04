@@ -1,0 +1,51 @@
+---
+# tasks file for pilot-light-server
+- name: Create directory for Pilot Light Server Bin
+  file:
+    path: "{{ pilot_light_bin_path }}"
+    state: directory
+
+- name: Create directory for Pilot Light Server Conf
+  file:
+    path: "{{ pilot_light_conf_path }}"
+    state: directory
+
+- name: Download and unzip Pilot Light package
+  ansible.builtin.unarchive:
+    src: "https://github.com/kenmoini/pilot-light/releases/download/v{{ pilot_light_version }}/pilot-light_{{ pilot_light_version }}_linux_amd64.zip"
+    dest: "{{ pilot_light_conf_path }}"
+    remote_src: yes
+
+- name: Move Pilot Light binary
+  command: "mv {{ pilot_light_conf_path }}/pilot-light {{ pilot_light_bin_path }}/pilot-light"
+
+- name: Make Pilot Light binary executable
+  command: "chmod +x {{ pilot_light_bin_path }}/pilot-light"
+
+- name: Template over Pilot Light Config
+  template:
+    src: pilot-light.conf.j2
+    dest: "{{ pilot_light_conf_path }}/pilot-light.conf"
+    mode: 0755
+
+- name: Template over Install Config
+  template:
+    src: ocp4-install-config.yaml.j2
+    dest: "{{ pilot_light_conf_path }}/install-config.yaml"
+    mode: 0755
+
+- name: Copy over Pilot Light Server Service file
+  template:
+    src: pilot-light.service.j2
+    dest: "/etc/systemd/system/pilot-light.service"
+    mode: 0755
+
+- name: SystemD Daemon Reload
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Enable and Start Pilot Light Server
+  ansible.builtin.systemd:
+    name: pilot-light
+    enabled: yes
+    state: started

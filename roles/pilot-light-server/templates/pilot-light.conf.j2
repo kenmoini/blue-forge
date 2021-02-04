@@ -1,0 +1,39 @@
+pilot_light:
+  version: 0.0.5
+
+  asset_directory: {{ pilot_light_conf_path }}/.generated/
+  dns_server: 10.128.10.10:53
+  install_config_path: {{ pilot_light_conf_path }}/install-config.yaml
+  masters_schedulable: false
+  default_ignition_file: bootstrap
+
+  server:
+    host: {{ pilot_light_server_listen_ip }}
+    path: "{{ pilot_light_server_path }}"
+    port: {{ pilot_light_server_port }}
+    timeout:
+      server: 30
+      read: 15
+      write: 10
+      idle: 5
+
+  database:
+    type: local
+    path: db.sqlite
+
+  ignition_sets:
+    - name: bootstrap
+      type: bootstrap
+      hostname_format: bootstrap
+
+    - name: control plane
+      type: master
+      hostname_format: master
+
+    - name: infrastructure
+      type: infra
+      hostname_format: infra
+
+    - name: application
+      type: worker
+      hostname_format: worker

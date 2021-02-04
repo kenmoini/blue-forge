@@ -1,0 +1,19 @@
+---
+# defaults file for pilot-light-server
+
+pilot_light_version: 0.0.5
+
+pilot_light_bin_path: /usr/local/bin
+pilot_light_conf_path: /etc/pilot-light
+
+pilot_light_server_port: 8082
+pilot_light_server_path: /ignition-generator
+pilot_light_server_listen_ip: 0.0.0.0
+
+installConfig_baseDomain: example.com
+installConfig_name: ocp4
+
+installConfig_pullSecret: ''
+installConfig_sshKey: ''
+
+installConfig_controlPlaneCount: 3
