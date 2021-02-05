@@ -169,27 +169,27 @@ So with that, there are a few prerequisites to using Blue Forge to deploy OpenSh
 
 ### 1. Architect the full environment with Static IPs
 
-|                      | Zone 1         | Zone 2         | Zone 3         | Additional Notes                                        |
-|----------------------|----------------|----------------|----------------|---------------------------------------------------------|
-| CIDR                 | 10.128.10.0/24 | 10.128.20.0/24 | 10.128.30.0/24 |                                                         |
-| Proctor Bastion      | 10.128.10.4    |                |                |                                                         |
-| Bootstrap Node       | 10.128.10.7    |                |                |                                                         |
-| Load Balancer        | 10.128.10.9    |                |                |                                                         |
-| DNS                  | 10.128.10.10   | 10.128.20.10   | 10.128.30.10   | Also Pilot Light Servers                                |
-| RH IDM Server        | 10.128.10.11   | 10.128.20.11   | 10.128.30.11   | If enabled, BIND DNS upstream is changed to IDM servers |
-| Control Plane Node   | 10.128.10.20   | 10.128.20.20   | 10.128.30.20   |                                                         |
-|                      | 10.128.10.21   | 10.128.20.21   | 10.128.30.21   | Additional Optional Control Plane Nodes                 |
-| Infrastructure Nodes | 10.128.10.30   | 10.128.20.30   | 10.128.30.30   | Optional Infrastructure Nodes                           |
-|                      | 10.128.10.31   | 10.128.20.31   | 10.128.30.31   | Additional Optional Infrastructure Nodes                |
-| Application Nodes    | 10.128.10.40   | 10.128.20.40   | 10.128.30.40   |                                                         |
-|                      | 10.128.10.41   | 10.128.20.41   | 10.128.30.41   | Additional Optional Application Nodes, in sets of 3     |
-|                      | 10.128.10.42   | 10.128.20.42   | 10.128.30.42   |                                                         |
-|                      | 10.128.10.43   | 10.128.20.43   | 10.128.30.43   |                                                         |
-|                      | 10.128.10.44   | 10.128.20.44   | 10.128.30.44   |                                                         |
-|                      | 10.128.10.45   | 10.128.20.45   | 10.128.30.45   |                                                         |
-| Minio S3 Server      | 10.128.10.61   |                |                |                                                         |
-| GitLab Server        | 10.128.10.62   |                |                |                                                         |
-| NFS Server           | 10.128.10.63   |                |                |                                                         |
+|                      | Zone 1         | Zone 2         | Zone 3         | Hostname Format                                                | Additional Notes                                        |
+|----------------------|----------------|----------------|----------------|----------------------------------------------------------------|---------------------------------------------------------|
+| CIDR                 | 10.128.10.0/24 | 10.128.20.0/24 | 10.128.30.0/24 |                                                                |                                                         |
+| Proctor Bastion      | 10.128.10.4    |                |                | bastion.{{ guid }}.{{ domain }}                                |                                                         |
+| Bootstrap Node       | 10.128.10.7    |                |                | bootstrap.{{ guid }}.{{ domain }}                              |                                                         |
+| Load Balancer        | 10.128.10.9    |                |                | lb.{{ guid }}.{{ domain }}                                     |                                                         |
+| DNS                  | 10.128.10.10   | 10.128.20.10   | 10.128.30.10   | ns{{ index }}-{{ workshop_shortcode }}-{{ guid }}.{{ domain }} | Also Pilot Light Servers                                |
+| RH IDM Server        | 10.128.10.11   | 10.128.20.11   | 10.128.30.11   | idm{{ index }}.{{ guid }}.{{ domain }}                         | If enabled, BIND DNS upstream is changed to IDM servers |
+| Control Plane Node   | 10.128.10.20   | 10.128.20.20   | 10.128.30.20   | ctrlp-{{ index }}.{{ guid }}.{{ domain }}                      |                                                         |
+|                      | 10.128.10.21   | 10.128.20.21   | 10.128.30.21   |                                                                | Additional Optional Control Plane Nodes                 |
+| Infrastructure Nodes | 10.128.10.30   | 10.128.20.30   | 10.128.30.30   | infra-{{ index }}.{{ guid }}.{{ domain }}                      | Optional Infrastructure Nodes                           |
+|                      | 10.128.10.31   | 10.128.20.31   | 10.128.30.31   |                                                                | Additional Optional Infrastructure Nodes                |
+| Application Nodes    | 10.128.10.40   | 10.128.20.40   | 10.128.30.40   | app-node-{{ index }}.{{ guid }}.{{ domain }}                   |                                                         |
+|                      | 10.128.10.41   | 10.128.20.41   | 10.128.30.41   |                                                                | Additional Optional Application Nodes, in sets of 3     |
+|                      | 10.128.10.42   | 10.128.20.42   | 10.128.30.42   |                                                                |                                                         |
+|                      | 10.128.10.43   | 10.128.20.43   | 10.128.30.43   |                                                                |                                                         |
+|                      | 10.128.10.44   | 10.128.20.44   | 10.128.30.44   |                                                                |                                                         |
+|                      | 10.128.10.45   | 10.128.20.45   | 10.128.30.45   |                                                                |                                                         |
+| Minio S3 Server      | 10.128.10.61   |                |                | s3.{{ guid }}.{{ domain }}                                     |                                                         |
+| GitLab Server        | 10.128.10.62   |                |                | gitlab.{{ guid }}.{{ domain }}                                 |                                                         |
+| NFS Server           | 10.128.10.63   |                |                | nfs.{{ guid }}.{{ domain }}                                    |                                                         |
 
 ***TODO***: Explore OCS for storage
 

@@ -1,0 +1,71 @@
+defaults
+  mode  tcp
+  maxconn 20000
+  log   /var/run/haproxy/haproxy-log.sock local0
+  option  dontlognull
+  retries 3
+  timeout http-request 10s
+  timeout queue  1m
+  timeout connect  10s
+  timeout client   4h
+  timeout server   4h
+  timeout http-keep-alive 10s
+  timeout check           10s
+  maxconn                 3000
+
+listen stats
+  bind  *:1936
+  mode  http
+  log   global
+  stats enable
+  stats hide-version
+  stats refresh 10s
+  stats show-node
+  stats auth admin:password
+  stats uri /haproxy?stats
+
+frontend api-server
+  bind {{ lb_vm_ipaddr }}:6443
+  default_backend api-server
+
+frontend router-http
+  bind {{ lb_vm_ipaddr }}:80
+  default_backend ingress-http
+
+frontend router-https
+  bind {{ lb_vm_ipaddr }}:443
+  default_backend ingress-https
+
+backend api-server
+  balance roundrobin
+  server {{ bootstrap_vm_name }} {{ bootstrap_vm_ipaddr }}:6443 check
+{% for node in control_plane_vsis %}
+  server {{ node.name }} {{ node.internal_ip }}:6443 check
+{% endfor %}
+
+backend ingress-http
+  balance roundrobin
+  mode tcp
+{% for node in application_node_vsis %}
+  server {{ node.name }} {{ node.internal_ip }}:80 check
+{% endfor %}
+
+backend ingress-https
+  balance roundrobin
+  mode tcp
+{% for node in application_node_vsis %}
+  server {{ node.name }} {{ node.internal_ip }}:443 check
+{% endfor %}
+
+{% if enable_machine_config_server|bool %}
+frontend machine-config-server
+  bind {{ lb_vm_ipaddr }}:22623
+  default_backend machine-config-server
+
+backend machine-config-server
+  balance roundrobin
+  server {{ bootstrap_vm_name }} {{ bootstrap_vm_ipaddr }}:22623 check
+{% for node in control_plane_vsis %}
+  server {{ node.name }} {{ node.internal_ip }}:22623 check
+{% endfor %}
+{% endif %}

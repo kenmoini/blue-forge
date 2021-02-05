@@ -1,0 +1,17 @@
+---
+# tasks file for haproxy-lb
+- name: Install HAProxy
+  dnf:
+    name: haproxy
+    state: latest
+
+- name: Template over haproxy.cfg file
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+
+- name: Enable and start HAProxy
+  service:
+    name: haproxy
+    state: started
+    enabled: yes

@@ -91,12 +91,35 @@
         installConfig_name: "{{ guid }}"
         installConfig_controlPlaneCount: "{{ ocp_control_plane_count }}"
 
+- name: Connect to Load Balancers and Run Configuration
+  hosts: lb_vsi
+  collections:
+    - ansible.posix
+  gather_facts: true
+
+  tasks:
+    - name: Assemble Assumed Inventory List
+      set_fact:
+        target_control_plane_vsis: "{{ (target_control_plane_vsis | default([])) + ['name': 'ctrlp-' + item] }}"
+      with_sequence: start=1 end="{{ ocp_control_plane_count }}" stride=1
+
+    - name: Deploy HAPRoxy
+      include_role:
+        name: haproxy-lb
+      vars:
+        enable_machine_config_server: true
+        lb_vm_ipaddr: 0.0.0.0
+        bootstrap_vm_name: bootstrap
+        bootstrap_vm_ipaddr: 10.128.10.7
+
 - name: Connect to new external VSIs and set base system updates
   hosts: ext_workshop_vsi
   collections:
     - ansible.posix
   gather_facts: true
+
   tasks:
+
     - name: Double check on updates
       include_role:
         name: baseLinuxUpdate

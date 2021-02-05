@@ -28,7 +28,7 @@ pilot_light:
 
     - name: control plane
       type: master
-      hostname_format: master
+      hostname_format: ctrlp
 
     - name: infrastructure
       type: infra
@@ -36,4 +36,4 @@ pilot_light:
 
     - name: application
       type: worker
-      hostname_format: worker
+      hostname_format: app-node
