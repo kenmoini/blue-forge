@@ -25,6 +25,12 @@ resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_app_node_s
   vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
 }
 
+resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_infra_node_sg" {
+  depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0 ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-infra-node-sg"
+  vpc        = ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+}
+
 resource "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_dns_sg" {
   depends_on = [ ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0 ]
   name       = "{{ workshop_shortcode }}-{{ guid }}-dns-sg"
@@ -51,6 +57,13 @@ resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_lb_sg
 resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_control_plane_sg_out_allow" {
   depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg ]
   group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg.id
+  direction  = "outbound"
+  remote     = "0.0.0.0/0"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_infra_node_sg_out_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_infra_node_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_infra_node_sg.id
   direction  = "outbound"
   remote     = "0.0.0.0/0"
 }
@@ -89,6 +102,13 @@ resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_lb_sg
 resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_control_plane_sg_int_allow" {
   depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg ]
   group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg.id
+  direction  = "inbound"
+  remote     = "10.0.0.0/8"
+}
+
+resource "ibm_is_security_group_rule" "{{ workshop_shortcode }}_{{ guid }}_infra_node_sg_int_allow" {
+  depends_on = [ ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_infra_node_sg ]
+  group      = ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_infra_node_sg.id
   direction  = "inbound"
   remote     = "10.0.0.0/8"
 }

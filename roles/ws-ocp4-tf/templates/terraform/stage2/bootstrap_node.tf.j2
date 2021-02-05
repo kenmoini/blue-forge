@@ -1,0 +1,30 @@
+#############################################################################
+## Generate OCP 4 Bootstrap Virtual Server Instance
+
+resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_bootstrap_vsi" {
+  depends_on = [ data.ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg ]
+  name    = "{{ workshop_shortcode }}-{{ guid }}-bootstrap-vsi"
+  image   = data.ibm_is_image.rhcos_is_image.id
+  profile = "{{ ocp_bootstrap_vsi_profile }}"
+
+  primary_network_interface {
+    subnet               = data.ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet0.id
+    security_groups      = [data.ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg.id]
+    primary_ipv4_address = "{{ bootstrap_node_internal_ip }}"
+  }
+
+  vpc  = data.ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+  zone = "{{ zone_list[0] }}"
+  keys = [data.ibm_is_ssh_key.{{ workshop_shortcode }}_{{ guid }}_ssh_key.id]
+  tags = [ "assetID:bootstrap-vsi", "assetType:vsi", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+
+  boot_volume {
+    name = "{{ workshop_shortcode }}-{{ guid }}-bootstrap-bootvol"
+  }
+}
+resource "ibm_is_floating_ip" "{{ workshop_shortcode }}_{{ guid }}_bootstrap_fip" {
+  depends_on = [ ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_bootstrap_vsi ]
+  name       = "{{ workshop_shortcode }}-{{ guid }}-bootstrap-fip"
+  target     = ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_bootstrap_vsi.primary_network_interface[0].id
+  tags       = [ "assetID:bootstrap-fip", "assetType:fip", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+}

@@ -17,3 +17,33 @@
 - name: Generate Student Password Hash
   command: 'python3 -c ''import passlib.hash; print(passlib.hash.sha512_crypt.hash("{{ student_password }}"))'''
   register: generated_student_password_hash
+
+- name: Set base facts
+  set_fact:
+    target_control_plane_vsis: []
+    target_infra_vsis: []
+    target_app_node_vsis: []
+
+- name: Assemble Assumed Inventory List - Control Plane
+  set_fact:
+    target_control_plane_vsis: "{{ (target_control_plane_vsis | default([])) + [item] }}"
+  loop: "{{ assumed_inventory.control_plane }}"
+  loop_control:
+    extended: yes
+  when: ansible_loop.index0 < ocp_control_plane_count
+
+- name: Assemble Assumed Inventory List - Infrastructure Nodes
+  set_fact:
+    target_infra_vsis: "{{ (target_infra_vsis | default([])) + [item] }}"
+  loop: "{{ assumed_inventory.infra }}"
+  loop_control:
+    extended: yes
+  when: ansible_loop.index0 < ocp_infrastructure_node_count
+
+- name: Assemble Assumed Inventory List - Application Nodes
+  set_fact:
+    target_app_node_vsis: "{{ (target_app_node_vsis | default([])) + [item] }}"
+  loop: "{{ assumed_inventory.app_nodes }}"
+  loop_control:
+    extended: yes
+  when: ansible_loop.index0 < ocp_application_node_count

@@ -1,5 +1,8 @@
 ---
 ## This Playbook will deploy an OpenShift 4 Workshop environment
+####################################################################
+## Stage 1 Infrastructure and Base Setup
+####################################################################
 - name: Deploy OpenShift 4 Workshop
   hosts: localhost
   gather_facts: true
@@ -9,6 +12,11 @@
     - ibm.cloudcollection
 
   tasks:
+    - name: Include IP Definition Vars
+      include_role:
+        name: ws-ocp4-tf
+        tasks_from: shared_vars
+
     # Preflight tasks such as generation directory
     - name: Provision Terraform locally
       include_role:
@@ -38,12 +46,20 @@
       tags:
         - dnsnb
 
+####################################################################
+## DNS Server Config
+####################################################################
 - name: Connect to DNS VSIs and set configuration
   hosts: dns_vsi
   collections:
     - ansible.posix
   gather_facts: true
   tasks:
+    - name: Include IP Definition Vars
+      include_role:
+        name: ws-ocp4-tf
+        tasks_from: shared_vars
+      
     - name: Configure DNS servers - FirewallD
       include_role:
         name: kenmoini.firewalld
@@ -91,27 +107,34 @@
         installConfig_name: "{{ guid }}"
         installConfig_controlPlaneCount: "{{ ocp_control_plane_count }}"
 
+####################################################################
+## Load Balancer Config
+####################################################################
 - name: Connect to Load Balancers and Run Configuration
   hosts: lb_vsi
   collections:
     - ansible.posix
   gather_facts: true
-
   tasks:
-    - name: Assemble Assumed Inventory List
-      set_fact:
-        target_control_plane_vsis: "{{ (target_control_plane_vsis | default([])) + ['name': 'ctrlp-' + item] }}"
-      with_sequence: start=1 end="{{ ocp_control_plane_count }}" stride=1
+    - name: Include IP Definition Vars
+      include_role:
+        name: ws-ocp4-tf
+        tasks_from: shared_vars
 
-    - name: Deploy HAPRoxy
+    - name: Deploy HAProxy
       include_role:
         name: haproxy-lb
       vars:
         enable_machine_config_server: true
         lb_vm_ipaddr: 0.0.0.0
         bootstrap_vm_name: bootstrap
-        bootstrap_vm_ipaddr: 10.128.10.7
+        bootstrap_vm_ipaddr: "{{ bootstrap_node_internal_ip }}"
+        control_plane_vsis: "{{ hostvars['localhost']['target_control_plane_vsis'] }}"
+        app_node_vsis: "{{ hostvars['localhost']['target_app_node_vsis'] }}"
 
+####################################################################
+## External Base Config
+####################################################################
 - name: Connect to new external VSIs and set base system updates
   hosts: ext_workshop_vsi
   collections:
@@ -119,6 +142,11 @@
   gather_facts: true
 
   tasks:
+
+    - name: Include IP Definition Vars
+      include_role:
+        name: ws-ocp4-tf
+        tasks_from: shared_vars
 
     - name: Double check on updates
       include_role:
@@ -174,12 +202,29 @@
         system_search_domain: "{{ guid }}.{{ domain }}"
       tags:
         - set_system_dns
-  # [DONE] Template over Terraform and other config
-  # [DONE] Deploy Stage 1 Terraform - VPC, Subnets, DNS Nodes, Load Balancer
-  # [DONE] Configure DNS
-  # [DONE] Configure Pilot Light Servers
-  # Configure Load Balancer
-  # Deploy Stage 2 Terraform - OCP 4 Bootstrap Node
+####################################################################
+## Stage 2 Configuration
+####################################################################
+- name: Deploy OpenShift 4 Workshop
+  hosts: localhost
+  gather_facts: true
+  collections:
+    - community.crypto
+    - community.general
+    - ibm.cloudcollection
+
+  tasks:
+    - name: Include IP Definition Vars
+      include_role:
+        name: ws-ocp4-tf
+        tasks_from: shared_vars
+
+    - name: Build Stage 2 Infrastructure
+      include_role:
+        name: ws-ocp4-tf
+        tasks_from: deploy_stage2
+      tags:
+        - stage2
   # Deploy Stage 3 Terraform - OCP 4 Cluster Nodes
   # Deploy Stage 4 Terraform - Additional Nodes such as GitLab, Minio, NFS, etc
   # Run additional post-cluster deployment configuration

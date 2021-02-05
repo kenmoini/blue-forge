@@ -46,14 +46,14 @@ backend api-server
 backend ingress-http
   balance roundrobin
   mode tcp
-{% for node in application_node_vsis %}
+{% for node in app_node_vsis %}
   server {{ node.name }} {{ node.internal_ip }}:80 check
 {% endfor %}
 
 backend ingress-https
   balance roundrobin
   mode tcp
-{% for node in application_node_vsis %}
+{% for node in app_node_vsis %}
   server {{ node.name }} {{ node.internal_ip }}:443 check
 {% endfor %}
 

@@ -48,19 +48,6 @@ zone_list:
   - "{{ region }}-1"
   - "{{ region }}-2"
   - "{{ region }}-3"
-private_ip_pools:
-  - 10.128.10.0/24
-  - 10.128.20.0/24
-  - 10.128.30.0/24
-
-proctor_internal_ip: 10.128.10.4
-
-load_balancer_internal_ip: 10.128.10.9
-
-dns_server_internal_ip:
-  - 10.128.10.10
-  - 10.128.20.10
-  - 10.128.30.10
 
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
 
@@ -84,18 +71,63 @@ ocp_control_plane_tcp_port_rules:
     direction: inbound
     remote: 10.0.0.0/8
     name: tcp_ocpCP_SSHIn
-  - start: 9090
-    end: 9090
+  - start: 2379
+    end: 2380
     direction: inbound
     remote: 10.0.0.0/8
-    name: tcp_ocpCP_CockpitIn
+    name: tcp_ocpCP_etcdIn
+  - start: 6443
+    end: 6443
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpCP_k8sAPIIn
+  - start: 9000
+    end: 9999
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpCP_hostSvcsIn
+  - start: 10250
+    end: 10259
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpCP_k8sPortsIn
+  - start: 22623
+    end: 22623
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpCP_k8sMachineConfigIn
+  - start: 30000
+    end: 32767
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpCP_NodePortsIn
 
 ocp_control_plane_udp_port_rules:
-  - start: 9090
-    end: 9090
+  - start: 4789
+    end: 4789
     direction: inbound
-    remote: 0.0.0.0/0
-    name: udp_ocpCP_CockpitIn
+    remote: 10.0.0.0/8
+    name: udp_ocpCP_vxlanIn
+  - start: 6081
+    end: 6081
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: udp_ocpCP_geneveIn
+  - start: 9000
+    end: 9999
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: udp_ocpCP_hostSvcsIn
+  - start: 22623
+    end: 22623
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: udp_ocpCP_k8sMachineConfigIn
+  - start: 30000
+    end: 32767
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: udp_ocpCP_NodePortsIn
 
 ocp_app_node_tcp_port_rules:
   - start: 22
@@ -103,18 +135,53 @@ ocp_app_node_tcp_port_rules:
     direction: inbound
     remote: 10.0.0.0/8
     name: tcp_ocpAN_SSHIn
-  - start: 9090
-    end: 9090
+  - start: 2379
+    end: 2380
     direction: inbound
     remote: 10.0.0.0/8
-    name: tcp_ocpAN_CockpitIn
+    name: tcp_ocpAN_etcdIn
+  - start: 6443
+    end: 6443
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpAN_k8sAPIIn
+  - start: 9000
+    end: 9999
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpAN_hostSvcsIn
+  - start: 10250
+    end: 10259
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpAN_k8sPortsIn
+  - start: 30000
+    end: 32767
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpAN_NodePortsIn
 
 ocp_app_node_udp_port_rules:
-  - start: 9090
-    end: 9090
+  - start: 4789
+    end: 4789
     direction: inbound
-    remote: 0.0.0.0/0
-    name: udp_ocpAN_CockpitIn
+    remote: 10.0.0.0/8
+    name: udp_ocpAN_vxlanIn
+  - start: 6081
+    end: 6081
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: udp_ocpAN_geneveIn
+  - start: 9000
+    end: 9999
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: udp_ocpAN_hostSvcsIn
+  - start: 30000
+    end: 32767
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: udp_ocpAN_NodePortsIn
 
 ocp_lb_tcp_port_rules:
   - start: 22
@@ -137,11 +204,21 @@ ocp_lb_tcp_port_rules:
     direction: inbound
     remote: 0.0.0.0/0
     name: tcp_ocpLB_APIIn
+  - start: 8082
+    end: 8082
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpLB_PilotLightIn
   - start: 9090
     end: 9090
     direction: inbound
     remote: 0.0.0.0/0
     name: tcp_ocpLB_CockpitIn
+  - start: 22623
+    end: 22623
+    direction: inbound
+    remote: 10.0.0.0/8
+    name: tcp_ocpLB_MachineIn
 
 ocp_lb_udp_port_rules:
   - start: 9090

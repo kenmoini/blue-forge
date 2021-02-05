@@ -1,0 +1,4 @@
+---
+
+- name: Pull in IP Definitions
+  include_vars: defaults/ip_definitions.yml

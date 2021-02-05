@@ -16,9 +16,27 @@ zones:
           ttl: 6400
           value: {{ hostvars[host]['ansible_internal_ip'] }}
 {% endfor %}
-        - name: lb
+{% if hostvars['localhost']['target_control_plane_vsis']|length>0 %}
+{% for host in hostvars['localhost']['target_control_plane_vsis'] %}
+        - name: {{ host.name }}
           ttl: 6400
-          value: {{ load_balancer_vsi_state }}
+          value: {{ host.internal_ip }}
+{% endfor %}
+{% endif %}
+{% if hostvars['localhost']['target_infra_vsis']|length>0 %}
+{% for host in hostvars['localhost']['target_infra_vsis'] %}
+        - name: {{ host.name }}
+          ttl: 6400
+          value: {{ host.internal_ip }}
+{% endfor %}
+{% endif %}
+{% if hostvars['localhost']['target_app_node_vsis']|length>0 %}
+{% for host in hostvars['localhost']['target_app_node_vsis'] %}
+        - name: {{ host.name }}
+          ttl: 6400
+          value: {{ host.internal_ip }}
+{% endfor %}
+{% endif %}
         - name: api-int
           ttl: 6400
           value: {{ load_balancer_vsi_state }}
@@ -49,9 +67,6 @@ zones:
           ttl: 6400
           value: {{ hostvars[host]['ansible_external_ip'] }}
 {% endfor %}
-        - name: lb
-          ttl: 6400
-          value: {{ load_balancer_fip_state }}
         - name: api-int
           ttl: 6400
           value: {{ load_balancer_fip_state }}

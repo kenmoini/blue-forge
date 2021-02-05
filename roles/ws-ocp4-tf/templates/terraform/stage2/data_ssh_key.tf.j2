@@ -1,0 +1,5 @@
+#############################################################################
+## Get
+data "ibm_is_ssh_key" "{{ workshop_shortcode }}_{{ guid }}_ssh_key" {
+  name       = "{{ workshop_shortcode }}-{{ guid }}-ssh-key"
+}

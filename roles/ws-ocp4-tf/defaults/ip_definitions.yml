@@ -1,0 +1,93 @@
+---
+private_ip_pools:
+  - 10.128.10.0/24
+  - 10.128.20.0/24
+  - 10.128.30.0/24
+
+bootstrap_node_internal_ip: 10.128.10.7
+proctor_internal_ip: 10.128.10.4
+load_balancer_internal_ip: 10.128.10.9
+
+dns_server_internal_ip:
+  - 10.128.10.10
+  - 10.128.20.10
+  - 10.128.30.10
+
+assumed_inventory:
+  control_plane:
+    - name: "ctrlp-1"
+      internal_ip: 10.128.10.20
+    - name: "ctrlp-2"
+      internal_ip: 10.128.20.20
+    - name: "ctrlp-3"
+      internal_ip: 10.128.30.20
+    - name: "ctrlp-4"
+      internal_ip: 10.128.10.21
+    - name: "ctrlp-5"
+      internal_ip: 10.128.20.21
+    - name: "ctrlp-6"
+      internal_ip: 10.128.30.21
+    - name: "ctrlp-7"
+      internal_ip: 10.128.10.22
+    - name: "ctrlp-8"
+      internal_ip: 10.128.20.22
+    - name: "ctrlp-9"
+      internal_ip: 10.128.30.22
+
+  infra:
+    - name: "infra-1"
+      internal_ip: 10.128.10.30
+    - name: "infra-2"
+      internal_ip: 10.128.20.30
+    - name: "infra-3"
+      internal_ip: 10.128.30.30
+    - name: "infra-4"
+      internal_ip: 10.128.10.31
+    - name: "infra-5"
+      internal_ip: 10.128.20.31
+    - name: "infra-6"
+      internal_ip: 10.128.30.31
+    - name: "infra-7"
+      internal_ip: 10.128.10.32
+    - name: "infra-8"
+      internal_ip: 10.128.20.32
+    - name: "infra-9"
+      internal_ip: 10.128.30.32
+
+  app_nodes:
+    - name: "app-node-1"
+      internal_ip: 10.128.10.40
+    - name: "app-node-2"
+      internal_ip: 10.128.20.40
+    - name: "app-node-3"
+      internal_ip: 10.128.30.40
+    - name: "app-node-4"
+      internal_ip: 10.128.10.41
+    - name: "app-node-5"
+      internal_ip: 10.128.20.41
+    - name: "app-node-6"
+      internal_ip: 10.128.30.41
+    - name: "app-node-7"
+      internal_ip: 10.128.10.42
+    - name: "app-node-8"
+      internal_ip: 10.128.20.42
+    - name: "app-node-9"
+      internal_ip: 10.128.30.42
+    - name: "app-node-10"
+      internal_ip: 10.128.10.43
+    - name: "app-node-11"
+      internal_ip: 10.128.20.43
+    - name: "app-node-12"
+      internal_ip: 10.128.30.43
+    - name: "app-node-13"
+      internal_ip: 10.128.10.44
+    - name: "app-node-14"
+      internal_ip: 10.128.20.44
+    - name: "app-node-15"
+      internal_ip: 10.128.30.44
+    - name: "app-node-16"
+      internal_ip: 10.128.10.45
+    - name: "app-node-17"
+      internal_ip: 10.128.20.45
+    - name: "app-node-18"
+      internal_ip: 10.128.30.45

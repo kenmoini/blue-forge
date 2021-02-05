@@ -13,6 +13,10 @@ data "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_control_plane_
   name       = "{{ workshop_shortcode }}-{{ guid }}-control-plane-sg"
 }
 
+data "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_infra_node_sg" {
+  name       = "{{ workshop_shortcode }}-{{ guid }}-infra-node-sg"
+}
+
 data "ibm_is_security_group" "{{ workshop_shortcode }}_{{ guid }}_app_node_sg" {
   name       = "{{ workshop_shortcode }}-{{ guid }}-app-node-sg"
 }

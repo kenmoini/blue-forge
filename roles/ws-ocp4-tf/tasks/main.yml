@@ -17,12 +17,12 @@
 
 - name: Check for terraform.tfstate file
   stat:
-    path: "{{ tfile_dir }}/terraform.tfstate"
+    path: "{{ tfile_dir }}/stage1/terraform.tfstate"
   register: check_terraform_state
 
 - name: Check for state of terraform.tfstate file lol
   shell:
-    cmd: "wc -l {{ tfile_dir }}/terraform.tfstate | cut -d ' ' -f 1"
+    cmd: "wc -l {{ tfile_dir }}/stage1/terraform.tfstate | cut -d ' ' -f 1"
   when: check_terraform_state.stat.exists
   register: state_size_check
 
