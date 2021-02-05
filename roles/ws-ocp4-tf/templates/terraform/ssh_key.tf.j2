@@ -1,20 +1,8 @@
 #############################################################################
 ## Generate new cluster SSH Keys
-resource "tls_private_key" "cluster_new_key" {
-  algorithm = "RSA"
-  rsa_bits  = "4096"
-}
-resource "local_file" "cluster_new_priv_file" {
-  content         = tls_private_key.cluster_new_key.private_key_pem
-  filename        = "{{ generation_directory }}/id_ssh_rsa"
-  file_permission = "0600"
-}
-resource "local_file" "cluster_new_pub_file" {
-  content  = tls_private_key.cluster_new_key.public_key_openssh
-  filename = "{{ generation_directory }}/id_ssh_rsa.pub"
-}
+
 resource "ibm_is_ssh_key" "{{ workshop_shortcode }}_{{ guid }}_ssh_key" {
   name       = "{{ workshop_shortcode }}-{{ guid }}-ssh-key"
-  public_key = tls_private_key.cluster_new_key.public_key_openssh
+  public_key = file("{{ generation_directory }}/id_ssh_rsa.pub")
   tags       = [ "assetID:ssh-key", "assetType:ssh-key", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
 }
