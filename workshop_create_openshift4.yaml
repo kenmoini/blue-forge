@@ -121,6 +121,24 @@
         name: ws-ocp4-tf
         tasks_from: shared_vars
 
+    - name: Configure FirewallD
+      include_role:
+        name: kenmoini.firewalld
+      tags:
+        - global_configuration
+        - firewalld
+      vars:
+        force_restart_of_firewalld: true
+        firewalld_services:
+          - ssh
+          - cockpit
+          - http
+          - https
+        firewalld_ports:
+          - 6443/tcp
+          - 8082/tcp
+          - 22623/tcp
+
     - name: Deploy HAProxy
       include_role:
         name: haproxy-lb
@@ -168,8 +186,6 @@
         firewalld_services:
           - ssh
           - cockpit
-          - http
-          - https
 
     - name: Configure Cockpit
       include_role:

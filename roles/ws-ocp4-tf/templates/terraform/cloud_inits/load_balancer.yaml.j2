@@ -11,4 +11,4 @@ users:
         - {{ new_ssh_key_pair.public_key }}
 runcmd:
   - dnf update -y
-  - dnf install -y {% for pkg in base_install_packages %}{{ pkg }} {% endfor %} git
+  - dnf install -y {% for pkg in base_install_packages %}{{ pkg }} {% endfor %} git haproxy

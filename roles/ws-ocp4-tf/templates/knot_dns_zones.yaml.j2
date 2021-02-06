@@ -37,6 +37,9 @@ zones:
           value: {{ host.internal_ip }}
 {% endfor %}
 {% endif %}
+        - name: bootstrap
+          ttl: 6400
+          value: {{ bootstrap_node_internal_ip }}
         - name: api-int
           ttl: 6400
           value: {{ load_balancer_vsi_state }}
