@@ -110,11 +110,11 @@
         name: ws-ocp4-tf
         tasks_from: shared_vars
 
-    - name: Configure FirewallD
+    - name: Configure Load Balancer - FirewallD
       include_role:
         name: kenmoini.firewalld
       tags:
-        - global_configuration
+        - load_balancer_config
         - firewalld
       vars:
         force_restart_of_firewalld: true
@@ -128,7 +128,14 @@
           - 8082/tcp
           - 22623/tcp
 
-    - name: Deploy HAProxy
+    - name: Configure Load Balancer - Cockpit
+      include_role:
+        name: kenmoini.cockpit
+      tags:
+        - load_balancer_config
+        - cockpit
+
+    - name: Configure Load Balancer - Deploy HAProxy
       include_role:
         name: haproxy-lb
       vars:
@@ -138,8 +145,11 @@
         bootstrap_vm_ipaddr: "{{ bootstrap_node_internal_ip }}"
         control_plane_vsis: "{{ hostvars['localhost']['target_control_plane_vsis'] }}"
         app_node_vsis: "{{ hostvars['localhost']['target_app_node_vsis'] }}"
+      tags:
+        - load_balancer_config
+        - deploy_haproxy
 
-    - name: Configure DNS Nodes as Pilot Light servers
+    - name: Configure Load Balancer - Pilot Light server
       include_role:
         name: pilot-light-server
       vars:
@@ -148,6 +158,9 @@
         installConfig_baseDomain: "{{ domain }}"
         installConfig_name: "{{ guid }}"
         installConfig_controlPlaneCount: "{{ ocp_control_plane_count }}"
+      tags:
+        - load_balancer_config
+        - pilot_light_server
 
 ####################################################################
 ## External Base Config
@@ -180,6 +193,7 @@
       tags:
         - global_configuration
         - firewalld
+        - never
       vars:
         force_restart_of_firewalld: true
         firewalld_services:
@@ -192,6 +206,7 @@
       tags:
         - global_configuration
         - cockpit
+        - never
 
     - name: Set proper hostnames
       include_role:
