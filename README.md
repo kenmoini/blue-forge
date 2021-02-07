@@ -216,7 +216,7 @@ So with that, there are a few prerequisites to using Blue Forge to deploy OpenSh
     INSERT the following into the /ignition.firstboot file:
     
     ```
-    set ignition_network_kcmdline='rd.neednet=1 ip=dhcp nameserver=10.128.10.10 nameserver=10.128.20.10 nameserver=10.128.30.10 coreos.inst.ignition_url=http://10.128.10.10:8082/ignition-generator'
+    set ignition_network_kcmdline='coreos.firstboot=1 rd.neednet=1 ip=dhcp nameserver=10.128.10.10 nameserver=10.128.20.10 nameserver=10.128.30.10 ignition.platform.id=metal ignition.config.url=http://10.128.10.9:8082/ignition-generator'
     ```
     
     Then `ESC` and `:wq` out of INSERT mode and vi.  Exit guestfish with the following:
