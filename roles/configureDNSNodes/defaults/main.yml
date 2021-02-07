@@ -62,11 +62,11 @@ base_packages:
   - bind-utils
   - nano
   - wget
+  - curl
   - libedit
   - gnutls
   - lmdb-libs
   - userspace-rcu
-  - fstrm
   - libcap-ng
   - libcap-ng-utils
   - libnghttp2

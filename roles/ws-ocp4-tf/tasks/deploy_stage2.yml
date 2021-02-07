@@ -1,6 +1,8 @@
 ---
 - name: Template over Terraform files
   include_tasks: template_terraform_stage2.yml
+  tags:
+    - template_terraform_stage2
 
 - name: Run Terraform
   community.general.terraform:
