@@ -1,0 +1,20 @@
+---
+- name: Template over Stage 4 Terraform files
+  include_tasks: template_terraform_stage4.yml
+  tags:
+    - template_terraform_stage4
+
+- name: Run Stage 4 Terraform
+  community.general.terraform:
+    project_path: "{{ tfile_dir }}/stage4/"
+    state: present
+    force_init: true
+    binary_path: "{{ terraform_path }}"
+    variables:
+      ibmcloud_api_key: "{{ ibmcloud_api_key }}"
+  register: terraform_stage4_result
+  delay: 3
+  retries: 3
+  until: terraform_stage4_result is not failed
+  tags:
+    - run_terraform_stage4

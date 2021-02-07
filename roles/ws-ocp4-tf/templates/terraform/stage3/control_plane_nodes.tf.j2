@@ -1,0 +1,33 @@
+{% set internalVars = {'zoneCycle': 0} %}
+{% for k in range(ocp_control_plane_count) %}
+{% set kPlusOne = (k + 1) %}
+#############################################################################
+## Generate OCP 4 Control Plane Node #{{ kPlusOne }} Virtual Server Instance - zc: {{ internalVars.zoneCycle }}
+
+resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_cp{{ kPlusOne }}_vsi" {
+  depends_on = [ data.ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg ]
+  name    = "{{ workshop_shortcode }}-{{ guid }}-cp{{ kPlusOne }}-vsi"
+  image   = data.ibm_is_image.rhcos_is_image.id
+  profile = "{{ ocp_control_plane_vsi_profile }}"
+
+  primary_network_interface {
+    subnet               = data.ibm_is_subnet.{{ workshop_shortcode }}_{{ guid }}_subnet{{ internalVars.zoneCycle }}.id
+    security_groups      = [data.ibm_is_security_group.{{ workshop_shortcode }}_{{ guid }}_control_plane_sg.id]
+    primary_ipv4_address = "{{ assumed_inventory.control_plane[internalVars.zoneCycle].internal_ip }}"
+  }
+
+  vpc  = data.ibm_is_vpc.{{ workshop_shortcode }}_{{ guid }}_vpc.id
+  zone = "{{ zone_list[internalVars.zoneCycle] }}"
+  keys = [data.ibm_is_ssh_key.{{ workshop_shortcode }}_{{ guid }}_ssh_key.id]
+  tags = [ "assetID:control-plane-{{ kPlusOne }}-vsi", "assetGroup:control-plane-vsi", "assetType:vsi", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
+
+  boot_volume {
+    name = "{{ workshop_shortcode }}-{{ guid }}-cp{{ kPlusOne }}-bootvol"
+  }
+}
+{% if (internalVars.zoneCycle < 2) %}
+{% if internalVars.update({'zoneCycle': (internalVars.zoneCycle + 1)}) %} {% endif %}
+{% else %}
+{% if internalVars.update({'zoneCycle': 0}) %} {% endif %}
+{% endif %}
+{% endfor %}
