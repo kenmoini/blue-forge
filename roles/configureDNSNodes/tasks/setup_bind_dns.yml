@@ -32,6 +32,17 @@
   when: item.records is defined
 #  when: dns_systems[0]['name'] == hostvars[inventory_hostname]['ansible_set_hostname'] and item.records is defined
 
+- name: Template over reverse zones files
+  template:
+    src: dns.rev-zone.j2
+    dest: "{{ bind_zones_path }}/{{ item.name }}.{{ item.network }}.reverse.zone"
+    backup: yes
+    group: "{{ bind_group }}"
+    owner: "{{ bind_user }}"
+  loop: "{{ zones }}"
+  notify: restart bind
+  when: item.records is defined and item.reverse_dns_base is defined
+
 - name: Enable and start BIND
   service:
     name: named

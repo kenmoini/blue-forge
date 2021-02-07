@@ -27,14 +27,14 @@
   tags:
     - setup_bind_dns
 
-- name: Set up Knot Authoritative DNS
-  include_tasks: setup_knot_dns.yml
-  when: knot_auth_dns|bool
-  tags:
-    - setup_knot_dns
-
-- name: Set up Knot Resolver
-  include_tasks: setup_knot_resolver.yml
-  when: knot_resolving_dns|bool
-  tags:
-    - setup_knot_resolver
+#- name: Set up Knot Authoritative DNS
+#  include_tasks: setup_knot_dns.yml
+#  when: knot_auth_dns|bool
+#  tags:
+#    - setup_knot_dns
+#
+#- name: Set up Knot Resolver
+#  include_tasks: setup_knot_resolver.yml
+#  when: knot_resolving_dns|bool
+#  tags:
+#    - setup_knot_resolver

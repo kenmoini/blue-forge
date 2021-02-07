@@ -34,6 +34,12 @@ view "internalIBM" {
         type master;
         file "{{ bind_zones_path }}/{{ zone.name }}.internal.zone";
     };
+{% if zone.network == "internal" %}
+    zone "{{ zone.reverse_dns_base }}" {
+        type master;
+        file "{{ bind_zones_path }}/{{ zone.name }}.internal.reverse.zone";
+    };
+{% endif %}
 {% endif %}
 {% endif %}
 {% endfor %}

@@ -71,7 +71,7 @@ base_packages:
   - libcap-ng-utils
   - libnghttp2
 
-generate_reverse_zones: false
+generate_reverse_zones: true
 
 cleanup_old_zone_backups: true
 cleanup_old_zone_backups_older_than: 30d
