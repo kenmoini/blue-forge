@@ -174,8 +174,8 @@ So with that, there are a few prerequisites to using Blue Forge to deploy OpenSh
 | CIDR                 | 10.128.10.0/24 | 10.128.20.0/24 | 10.128.30.0/24 |                                                                |                                                         |
 | Proctor Bastion      | 10.128.10.4    |                |                | bastion.{{ guid }}.{{ domain }}                                |                                                         |
 | Bootstrap Node       | 10.128.10.7    |                |                | bootstrap.{{ guid }}.{{ domain }}                              |                                                         |
-| Load Balancer        | 10.128.10.9    |                |                | lb.{{ guid }}.{{ domain }}                                     |                                                         |
-| DNS                  | 10.128.10.10   | 10.128.20.10   | 10.128.30.10   | ns{{ index }}-{{ workshop_shortcode }}-{{ guid }}.{{ domain }} | Also Pilot Light Servers                                |
+| Load Balancer        | 10.128.10.9    |                |                | lb.{{ guid }}.{{ domain }}                                     | Also Pilot Light Server                                 |
+| DNS                  | 10.128.10.10   | 10.128.20.10   | 10.128.30.10   | ns{{ index }}-{{ workshop_shortcode }}-{{ guid }}.{{ domain }} |                                                         |
 | RH IDM Server        | 10.128.10.11   | 10.128.20.11   | 10.128.30.11   | idm{{ index }}.{{ guid }}.{{ domain }}                         | If enabled, BIND DNS upstream is changed to IDM servers |
 | Control Plane Node   | 10.128.10.20   | 10.128.20.20   | 10.128.30.20   | ctrlp-{{ index }}.{{ guid }}.{{ domain }}                      |                                                         |
 |                      | 10.128.10.21   | 10.128.20.21   | 10.128.30.21   |                                                                | Additional Optional Control Plane Nodes                 |
