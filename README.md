@@ -199,7 +199,7 @@ So with that, there are a few prerequisites to using Blue Forge to deploy OpenSh
 2. Use `guestfish` to modify the Grub boot kernel arguments and dracut to:
     - Use DHCP
     - Manually set DNS at `10.128.10.10`, `10.128.20.10`, and `10.128.30.10` - we'll deploy a few DIY DNS servers to map things properly
-    - Have RHCOS pull ignition from the first DNS server which runs a service called [Pilot Light](https://github.com/kenmoini/pilot-light) at port 8082 that generates and serves Ignition files based on Reverse DNS/Hostname mappings
+    - Have RHCOS pull ignition from the load balancer which runs a service called [Pilot Light](https://github.com/kenmoini/pilot-light) at port 8082 that generates and serves Ignition files based on Reverse DNS/Hostname mappings
 
     The whole set of commands looks like this:
 
