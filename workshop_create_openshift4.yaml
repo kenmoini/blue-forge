@@ -74,7 +74,6 @@
         firewalld_ports:
           - "53/tcp"
           - "53/udp"
-          - "8082/tcp"
 
     - name: Configure DNS servers - Cockpit
       include_role:
@@ -96,16 +95,6 @@
       tags:
         - dns_configuration
         - dns_daemon_configuration
-
-    - name: Configure DNS Nodes as Pilot Light servers
-      include_role:
-        name: pilot-light-server
-      vars:
-        installConfig_sshKey: "{{ lookup('file', generation_directory+'/id_ssh_rsa.pub') }}"
-        installConfig_pullSecret: "{{ ocp4_pull_secret }}"
-        installConfig_baseDomain: "{{ domain }}"
-        installConfig_name: "{{ guid }}"
-        installConfig_controlPlaneCount: "{{ ocp_control_plane_count }}"
 
 ####################################################################
 ## Load Balancer Config
@@ -149,6 +138,16 @@
         bootstrap_vm_ipaddr: "{{ bootstrap_node_internal_ip }}"
         control_plane_vsis: "{{ hostvars['localhost']['target_control_plane_vsis'] }}"
         app_node_vsis: "{{ hostvars['localhost']['target_app_node_vsis'] }}"
+
+    - name: Configure DNS Nodes as Pilot Light servers
+      include_role:
+        name: pilot-light-server
+      vars:
+        installConfig_sshKey: "{{ lookup('file', generation_directory+'/id_ssh_rsa.pub') }}"
+        installConfig_pullSecret: "{{ ocp4_pull_secret }}"
+        installConfig_baseDomain: "{{ domain }}"
+        installConfig_name: "{{ guid }}"
+        installConfig_controlPlaneCount: "{{ ocp_control_plane_count }}"
 
 ####################################################################
 ## External Base Config
