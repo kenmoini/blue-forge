@@ -3,7 +3,7 @@
 ####################################################################
 ## Stage 1 Infrastructure and Base Setup
 ####################################################################
-- name: Deploy OpenShift 4 Workshop
+- name: Deploy OpenShift 4 Workshop - Base and Stage 1
   hosts: localhost
   gather_facts: true
   collections:
@@ -135,6 +135,24 @@
         - load_balancer_config
         - cockpit
 
+    - name: Put SELinux in permissive mode, logging actions that would be blocked.
+      ansible.posix.selinux:
+        policy: targeted
+        state: permissive
+      register: seLinuxState
+      tags:
+        - load_balancer_config
+        - set_selinux
+      
+    - name: Reboot when needed
+      reboot:
+        reboot_timeout: 3600
+      when: seLinuxState.reboot_required|bool
+      tags:
+        - load_balancer_config
+        - set_selinux
+        - reboot
+
     - name: Configure Load Balancer - Deploy HAProxy
       include_role:
         name: haproxy-lb
@@ -236,7 +254,7 @@
 ####################################################################
 ## Stage 2 Configuration
 ####################################################################
-- name: Deploy OpenShift 4 Workshop
+- name: Deploy OpenShift 4 Workshop - Stage 2
   hosts: localhost
   gather_facts: true
   collections:
@@ -250,12 +268,36 @@
         name: ws-ocp4-tf
         tasks_from: shared_vars
 
-    - name: Build Stage 2 Infrastructure
+    - name: Build Stage 2 Infrastructure - OCP Bootstrap Node
       include_role:
         name: ws-ocp4-tf
         tasks_from: deploy_stage2
       tags:
         - stage2
-  # Deploy Stage 3 Terraform - OCP 4 Cluster Nodes
+  # Deploy Stage 3 Terraform - OCP 4 Control Plane Nodes
+    - name: Wait for 45 seconds while the bootstrap node comes up
+      pause:
+        seconds: 45
+      tags:
+        - wait_for_bootstrap
+
+    - name: Build Stage 3 Infrastructure - OCP Control Plane Nodes
+      include_role:
+        name: ws-ocp4-tf
+        tasks_from: deploy_stage3
+      tags:
+        - stage3
   # Deploy Stage 4 Terraform - Additional Nodes such as GitLab, Minio, NFS, etc
+    - name: Wait for 5 minutes while the control plane nodes comes up
+      pause:
+        minutes: 5
+      tags:
+        - wait_for_control_plane
+
+    - name: Build Stage 4 Infrastructure - OCP Control Plane Nodes
+      include_role:
+        name: ws-ocp4-tf
+        tasks_from: deploy_stage4
+      tags:
+        - stage4
   # Run additional post-cluster deployment configuration
