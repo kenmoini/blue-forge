@@ -38,7 +38,7 @@
   template:
     src: pilot-light.service.j2
     dest: "/etc/systemd/system/pilot-light.service"
-    mode: 0755
+    mode: 0644
 
 - name: SystemD Daemon Reload
   ansible.builtin.systemd:
