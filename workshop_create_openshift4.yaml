@@ -153,6 +153,7 @@
       include_role:
         name: pilot-light-server
       vars:
+        pilot_light_masters_schedulable: true
         installConfig_sshKey: "{{ lookup('file', generation_directory+'/id_ssh_rsa.pub') }}"
         installConfig_pullSecret: "{{ ocp4_pull_secret }}"
         installConfig_baseDomain: "{{ domain }}"
