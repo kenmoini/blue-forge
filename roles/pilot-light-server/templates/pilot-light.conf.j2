@@ -4,8 +4,8 @@ pilot_light:
   asset_directory: {{ pilot_light_conf_path }}/.generated/
   dns_server: 10.128.10.10:53
   install_config_path: {{ pilot_light_conf_path }}/install-config.yaml
-  masters_schedulable: false
-  default_ignition_file: bootstrap
+  masters_schedulable: {{ pilot_light_masters_schedulable }}
+  default_ignition_file: {{ pilot_light_default_ignition_file }}
 
   server:
     host: {{ pilot_light_server_listen_ip }}

@@ -10,6 +10,9 @@ pilot_light_server_port: 8082
 pilot_light_server_path: /ignition-generator
 pilot_light_server_listen_ip: 0.0.0.0
 
+pilot_light_masters_schedulable: true
+pilot_light_default_ignition_file: bootstrap
+
 installConfig_baseDomain: example.com
 installConfig_name: ocp4
 
