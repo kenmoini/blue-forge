@@ -22,9 +22,3 @@ resource "ibm_is_instance" "{{ workshop_shortcode }}_{{ guid }}_bootstrap_vsi" {
     name = "{{ workshop_shortcode }}-{{ guid }}-bootstrap-bootvol"
   }
 }
-resource "ibm_is_floating_ip" "{{ workshop_shortcode }}_{{ guid }}_bootstrap_fip" {
-  depends_on = [ ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_bootstrap_vsi ]
-  name       = "{{ workshop_shortcode }}-{{ guid }}-bootstrap-fip"
-  target     = ibm_is_instance.{{ workshop_shortcode }}_{{ guid }}_bootstrap_vsi.primary_network_interface[0].id
-  tags       = [ "assetID:bootstrap-fip", "assetType:fip", "guid:{{ guid }}", "workshop:{{ workshop_id }}" ]
-}
