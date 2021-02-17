@@ -12,6 +12,12 @@ student_password: changeme123
 student_count: 2
 student_node_count: 1
 
+## Tower now needs a RH subscription
+tower_rh_subscription_username: you@example.com
+tower_rh_subscription_password: securePassw0rd
+tower_rh_subscription_pool_id: l0ngstr1ng
+tower_rh_subscription_server_hostname: "{{ rhsm_server }}"
+
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
 
 region: us-east

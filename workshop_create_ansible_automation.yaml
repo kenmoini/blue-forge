@@ -93,7 +93,53 @@
         name: ws-ansible-automation-tf
         tasks_from: global_configuration
       tags:
-        - global_configuration
+        - node_global_configuration
+
+- name: Connect to new Tower VSIs install RH Ansible Tower
+  hosts:
+    - student_tower_vsi
+  collections:
+    - ansible.posix
+  gather_facts: true
+  tasks:
+
+    - name: Check if subscription is already attached
+      stat:
+        path: /opt/.subscribed
+      ignore_errors: yes
+      register: sub_run_check
+
+    - name: Clean subscription-manager
+      command: subscription-manager clean
+      when: not sub_run_check.stat.exists
+      tags:
+        - tower_subscription_clean
+      
+    - name: Register with subscription-manager
+      community.general.redhat_subscription:
+        state: present
+        rhsm_baseurl: https://cdn.redhat.com
+        server_hostname: subscription.rhsm.redhat.com:443/subscription
+        username: "{{ tower_rh_subscription_username }}"
+        password: "{{ tower_rh_subscription_password }}"
+        pool_ids: "{{ tower_rh_subscription_pool_id }}"
+      when: not sub_run_check.stat.exists
+      tags:
+        - tower_subscription_register
+
+    - name: Rip out IBM RHUI
+      command: sed -i "s|https://rhn\(.*\)networklayer.com/pulp/repos|https://cdn.redhat.com|g" /etc/yum.repos.d/redhat.repo
+
+    - name: Rip out Katello CA
+      command: sed -i "s|katello-server-ca|redhat-uep|g" /etc/yum.repos.d/redhat.repo
+
+    - name: Rip out Katello CA from RHSM
+      command: sed -i "s|%(ca_cert_dir)skatello-server-ca.pem|/etc/rhsm/ca/redhat-uep.pem|g" /etc/rhsm/rhsm.conf
+
+    - name: Touch it real good
+      file:
+        path: /opt/.subscribed
+        state: touch
 
 - name: Connect to new VSIs and set base global configuration
   hosts:
@@ -155,3 +201,17 @@
         system_search_domain: "{{ guid }}.{{ domain }}"
       tags:
         - set_system_dns
+
+- name: Connect to new Tower VSIs install RH Ansible Tower
+  hosts:
+    - student_tower_vsi
+  collections:
+    - ansible.posix
+  gather_facts: true
+  tasks:
+    - name: Install Ansible Tower
+      include_role:
+        name: ws-ansible-automation-tf
+        tasks_from: install_tower
+      tags:
+        - install_tower
