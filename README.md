@@ -139,12 +139,12 @@ ansible-playbook -e "@kubernetes101.extra_vars.yml" workshop_destroy_kubernetes1
 
 With N being number of Students, this environment will make the following:
 
-| QTY     | Asset                   | Hostname                           |
-|---------|-------------------------|------------------------------------|
-| 1       | Proctor Bastion         | bastion.[GUID].[DOMAIN]            |
-| 2       | DNS Nodes               | ns[NUM]-[GUID].[DOMAIN]            |
-| 1 Per N | Ansible Tower Host      | student[N].[GUID].[DOMAIN]         |
-| X Per N | Ansible Target Node     | student[N]-node[X].[GUID].[DOMAIN] |
+| QTY     | Asset                   | Hostname                                 |
+|---------|-------------------------|------------------------------------------|
+| 1       | Proctor Bastion         | bastion.[GUID].[DOMAIN]                  |
+| 2       | DNS Nodes               | ns[NUM]-[GUID].[DOMAIN]                  |
+| 1 Per N | Ansible Tower Host      | student[N]-tower.[GUID].[DOMAIN]         |
+| X Per N | Ansible Target Node     | student[N]-node[X].[GUID].[DOMAIN]       |
 
 #### Minimum `extra_vars.yaml` file found in `vars/example_workshop_ansible_automation.yml`
 
