@@ -25,4 +25,6 @@
     dest: "/opt/ansible-tower-installer/{{ tower_installer_path.stdout }}/inventory"
 
 - name: Run Tower Installation
-  command: /opt/ansible-tower-installer/{{ tower_installer_path.stdout }}/setup.sh
+  command: ./setup.sh
+  args:
+    chdir: /opt/ansible-tower-installer/{{ tower_installer_path.stdout }}
