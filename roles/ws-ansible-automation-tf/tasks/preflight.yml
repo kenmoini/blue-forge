@@ -49,3 +49,49 @@
       items2dict(key_name='name', value_name='id') }}"
   tags:
     - image_list
+
+- name: Log into RH SSO API
+  uri:
+    url: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+    body_format: form-urlencoded
+    method: POST
+    body:
+      grant_type: refresh_token
+      client_id: rhsm-api
+      refresh_token: "{{ rhsm_api_token }}"
+  register: rh_sso_reg
+  tags:
+    - tower_license
+
+- name: Trigger Manifest Export
+  uri:
+    url: "https://api.access.redhat.com/management/v1/allocations/{{ rhsm_tower_allocation_uuid }}/export"
+    status_code: 200
+    headers:
+      Authorization: "Bearer {{ rh_sso_reg.json.access_token }}"
+  register: trigger_manifest_export_reg
+  tags:
+    - tower_license
+
+- name: Check status of Manifest ExportJob
+  uri:
+    url: "{{ trigger_manifest_export_reg.json.body.href }}"
+    status_code: 200
+    headers:
+      Authorization: "Bearer {{ rh_sso_reg.json.access_token }}"
+  register: check_manifest_export_reg
+  until: check_manifest_export_reg.status == 200
+  retries: 10
+  delay: 10
+  ignore_errors: true
+  tags:
+    - tower_license
+
+- name: Download Manifest
+  get_url:
+    url: "{{ check_manifest_export_reg.json.body.href }}"
+    dest: "{{ generation_directory }}/tower_sub_manifest.zip"
+    headers:
+      Authorization: "Bearer {{ rh_sso_reg.json.access_token }}"
+  tags:
+    - tower_license

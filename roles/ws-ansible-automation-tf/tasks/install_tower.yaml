@@ -3,28 +3,55 @@
   file:
     path: /opt/ansible-tower-installer
     state: directory
+  tags:
+    - tower_installation
 
 - name: Ensure base packages are installed
   dnf:
     name: ['tar', 'unzip']
     state: latest
+  tags:
+    - tower_installation
 
 - name: Download the latest Ansible Tower install package
   ansible.builtin.unarchive:
     src: https://releases.ansible.com/ansible-tower/setup/ansible-tower-setup-latest.tar.gz
     dest: /opt/ansible-tower-installer
     remote_src: yes
+  tags:
+    - tower_installation
 
 - name: Get the directory listing to find out what version of Tower we're working with
   command: ls /opt/ansible-tower-installer
   register: tower_installer_path
+  tags:
+    - tower_installation
 
 - name: Template over the Tower Installer Inventory
   template:
     src: ansible_tower_inventory.j2
     dest: "/opt/ansible-tower-installer/{{ tower_installer_path.stdout }}/inventory"
+  tags:
+    - tower_installation
 
 - name: Run Tower Installation
   command: ./setup.sh
   args:
     chdir: /opt/ansible-tower-installer/{{ tower_installer_path.stdout }}
+  tags:
+    - tower_installation
+
+- name: Copy manifest over to Tower nodes
+  copy:
+    src: "{{ generation_directory }}/tower_sub_manifest.zip"
+    dest: /opt/tower_sub_manifest.zip
+
+- name: Configure Tower license
+  awx.awx.tower_license:
+    manifest: /opt/tower_sub_manifest.zip
+    eula_accepted: True
+    tower_username: admin
+    tower_password: "{{ tower_server_password }}"
+    validate_certs: false
+  tags:
+    - tower_license

@@ -9,6 +9,9 @@ workshop_shortcode: ansible
 proctor_password: changeme987
 student_password: changeme123
 
+tower_server_password: noPrizeFor5thBestCloud
+tower_db_password: noPrizeFor5thBestCloud
+
 student_count: 2
 student_node_count: 1
 
@@ -17,6 +20,9 @@ tower_rh_subscription_username: you@example.com
 tower_rh_subscription_password: securePassw0rd
 tower_rh_subscription_pool_id: l0ngstr1ng
 tower_rh_subscription_server_hostname: "{{ rhsm_server }}"
+
+rhsm_api_token: soLongMuchStringSoCharacter
+rhsm_tower_allocation_uuid: 0cf1b123-l0l0-zxc7-b268-9137e3ca7735
 
 generation_directory: "/tmp/.blue-forge/{{ workshop_id }}/{{ guid }}"
 
