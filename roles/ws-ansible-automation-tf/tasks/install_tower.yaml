@@ -1,0 +1,28 @@
+---
+- name: Make install directory
+  file:
+    path: /opt/ansible-tower-installer
+    state: directory
+
+- name: Ensure base packages are installed
+  dnf:
+    name: ['tar', 'unzip']
+    state: latest
+
+- name: Download the latest Ansible Tower install package
+  ansible.builtin.unarchive:
+    src: https://releases.ansible.com/ansible-tower/setup/ansible-tower-setup-latest.tar.gz
+    dest: /opt/ansible-tower-installer
+    remote_src: yes
+
+- name: Get the directory listing to find out what version of Tower we're working with
+  command: ls /opt/ansible-tower-installer
+  register: tower_installer_path
+
+- name: Template over the Tower Installer Inventory
+  template:
+    src: ansible_tower_inventory.j2
+    dest: "/opt/ansible-tower-installer/{{ tower_installer_path.stdout }}/inventory"
+
+- name: Run Tower Installation
+  command: /opt/ansible-tower-installer/{{ tower_installer_path.stdout }}/setup.sh

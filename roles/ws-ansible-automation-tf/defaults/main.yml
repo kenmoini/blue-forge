@@ -24,6 +24,9 @@ student_vsi_image: ibm-redhat-8-1-minimal-amd64-1
 rh_subscription: false
 tower_rh_subscription: false
 
+tower_server_password: noPrizeFor5thBestCloud
+tower_db_password: noPrizeFor5thBestCloud
+
 vpc_total_ipv4_address_count: 1024
 region: us-south
 regional_zone: us-south-3

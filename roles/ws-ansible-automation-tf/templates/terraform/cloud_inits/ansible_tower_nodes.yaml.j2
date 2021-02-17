@@ -16,37 +16,10 @@ users:
     ssh_import_id: None
     lock_passwd: false
     passwd: {{ generated_student_password_hash.stdout }}
-{% if tower_rh_subscription|bool %}
-tower_rh_subscription:
-  {% if tower_rh_subscription_username is defined %}
-  username: {{ tower_rh_subscription_username }}
-  {% endif %}
-  {% if tower_rh_subscription_password is defined %}
-  password: {{ tower_rh_subscription_password }}
-  {% endif %}
-  {% if tower_rh_subscription_auto_attach is defined %}
-  auto-attach: {{ tower_rh_subscription_auto_attach|bool }}
-  {% endif %}
-  {% if tower_rh_subscription_service_level is defined %}
-  service-level: {{ tower_rh_subscription_service_level }}
-  {% endif %}
-  {% if tower_rh_subscription_activation_key is defined %}
-  activation-key: {{ tower_rh_subscription_activation_key }}
-  {% endif %}
-  {% if tower_rh_subscription_organization_id is defined %}
-  org: {{ tower_rh_subscription_organization_id }}
-  {% endif %}
-  {% if tower_rh_subscription_pool_id is defined %}
-  add-pool: {{ tower_rh_subscription_pool_id }}
-  {% endif %}
-  {% if tower_rh_subscription_server_hostname is defined %}
-  server-hostname: {{ tower_rh_subscription_server_hostname }}
-  {% endif %}
-{% endif %}
-runcmd:
-{% if not tower_rh_subscription|bool %}
-  - /var/lib/cloud/instance/scripts/vendor/part-004
-{% endif %}
-  - touch /opt/.subscribed
-  - dnf update -y
-  - dnf install -y {% for pkg in base_install_packages %}{{ pkg }} {% endfor %} git
+#runcmd:
+#  - subscription-manager clean
+#  - subscription-manager register --serverurl={{ tower_rh_subscription_server_hostname }} --username={{ tower_rh_subscription_username }} --password={{ tower_rh_subscription_password }}
+#  - subscription-manager attach --pool={{ tower_rh_subscription_pool_id }}
+#  - touch /opt/.subscribed
+#  - dnf update -y
+#  - dnf install -y {% for pkg in base_install_packages %}{{ pkg }} {% endfor %} git

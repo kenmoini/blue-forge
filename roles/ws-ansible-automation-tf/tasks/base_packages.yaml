@@ -1,5 +1,5 @@
 ---
-- name: Update base system packages
+- name: Update system
   include_role:
     name: baseLinuxUpdate
   vars:
