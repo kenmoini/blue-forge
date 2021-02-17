@@ -147,6 +147,8 @@
   collections:
     - ansible.posix
   gather_facts: true
+  tags:
+    - global_base_config
   tasks:
 
     - name: Install Base Packages
