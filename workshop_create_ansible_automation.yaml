@@ -81,7 +81,9 @@
         - dns_daemon_configuration
 
 - name: Connect to new VSIs and set base global configuration
-  hosts: ext_workshop_vsi
+  hosts:
+    - student_node_vsi
+    - pb_vsi
   collections:
     - ansible.posix
   gather_facts: true
@@ -92,6 +94,21 @@
         tasks_from: global_configuration
       tags:
         - global_configuration
+
+- name: Connect to new VSIs and set base global configuration
+  hosts:
+    - ext_workshop_vsi
+  collections:
+    - ansible.posix
+  gather_facts: true
+  tasks:
+
+    - name: Install Base Packages
+      include_role:
+        name: ws-ansible-automation-tf
+        tasks_from: base_packages
+      tags:
+        - base_packages
 
     - name: Configure FirewallD
       include_role:

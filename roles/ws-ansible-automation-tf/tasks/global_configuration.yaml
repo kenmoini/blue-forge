@@ -15,7 +15,7 @@
 - name: Ensure Subscription Status
   command: /var/lib/cloud/instance/scripts/vendor/part-004 && touch /opt/.subscribed
   ignore_errors: yes
-  when: sub_check.stat.exists and not sub_run_check.stat.exists
+  when: sub_check.stat.exists and not sub_run_check.stat.exists and 'student_tower_vsi' not in group_names
   args:
     creates: /opt/.subscribed
   register: subscription_exec
@@ -26,17 +26,17 @@
     state: touch
   when: subscription_exec.changed
 
-- name: Update base system packages
-  include_role:
-    name: baseLinuxUpdate
-  vars:
-    reboot_after_kernel_update: true
-
-- name: Install base packages
-  yum:
-    name: "{{ base_install_packages }}"
-    state: latest
-
+#- name: Update base system packages
+#  include_role:
+#    name: baseLinuxUpdate
+#  vars:
+#    reboot_after_kernel_update: true
+#
+#- name: Install base packages
+#  yum:
+#    name: "{{ base_install_packages }}"
+#    state: latest
+#
 #- name: Enable and Start firewalld
 #  include_role:
 #    name: kenmoini.firewalld

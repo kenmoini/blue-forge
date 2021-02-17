@@ -1,0 +1,11 @@
+---
+- name: Update base system packages
+  include_role:
+    name: baseLinuxUpdate
+  vars:
+    reboot_after_kernel_update: true
+
+- name: Install base packages
+  yum:
+    name: "{{ base_install_packages }}"
+    state: latest

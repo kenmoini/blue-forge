@@ -22,6 +22,7 @@ student_vsi_node_profile: cx2-2x4
 student_vsi_tower_node_profile: bx2-2x8
 student_vsi_image: ibm-redhat-8-1-minimal-amd64-1
 rh_subscription: false
+tower_rh_subscription: false
 
 vpc_total_ipv4_address_count: 1024
 region: us-south
@@ -172,3 +173,6 @@ dns_node_udp_port_rules:
     name: udp_dns_CockpitIn
 
 dnsnb_custom_nameservers: []
+
+
+rhsm_server: subscription.rhsm.redhat.com:443/subscription
