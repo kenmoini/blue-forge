@@ -53,6 +53,11 @@
     tower_username: admin
     tower_password: "{{ tower_server_password }}"
     validate_certs: false
+  register: config_tower_license_reg
+  until: config_tower_license_reg is not failed
+  retries: 10
+  delay: 10
+  ignore_errors: true
   tags:
     - tower_license
 

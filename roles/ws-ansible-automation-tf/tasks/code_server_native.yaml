@@ -7,7 +7,7 @@
 - name: Install Code Server
   command: sh /opt/code-server-install.sh
   register: code_server_install
-  ignore_errors: when "already installed" in code_server_install.stderr
+  ignore_errors: true
 
 - name: Ensure code-server dir exists
   file:
@@ -18,7 +18,6 @@
   with_items:
     - "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.config/code-server/"
     - "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.local/share/code-server/User/"
-
 
 - name: Template over code-server.yaml
   template:
