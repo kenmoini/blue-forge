@@ -9,7 +9,7 @@
   register: code_server_install
   ignore_errors: true
 
-- name: Ensure code-server dir exists
+- name: Ensure code-server dirs exists
   file:
     path: "{{ item }}"
     state: directory
@@ -18,11 +18,19 @@
   with_items:
     - "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.config/code-server/"
     - "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.local/share/code-server/User/"
+    - "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/workshop/"
 
 - name: Template over code-server.yaml
   template:
     src: code-server-config.yaml.j2
     dest: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.config/code-server/config.yaml"
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+
+- name: Template over code-server coder.json
+  template:
+    src: code-server-coder.json.j2
+    dest: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.local/share/code-server/coder.json"
     owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
     group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
 
