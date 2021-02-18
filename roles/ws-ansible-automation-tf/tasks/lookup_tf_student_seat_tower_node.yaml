@@ -18,12 +18,15 @@
       - workshop_vsi
       - ext_workshop_vsi
       - internal_workshop_vsi
+      - student{{ item }}_vsi
+      - student{{ item }}_tower_vsi
     ansible_user: root
     ansible_ssh_user: root
     ansible_ssh_extra_args: -o StrictHostKeyChecking=no
     ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
     ansible_set_fqdn: "student{{ item }}-tower.{{ guid }}.{{ domain }}"
     ansible_set_hostname: "student{{ item }}-tower"
+    ansible_student_number: "{{ item }}"
     ansible_external_ip: "{{ tfstate | community.general.json_query(fip_filter) | first }}"
     ansible_internal_ip: "{{ tfstate | community.general.json_query(vsi_filter) | first }}"
     tfile_dir: "{{ tfile_dir }}"

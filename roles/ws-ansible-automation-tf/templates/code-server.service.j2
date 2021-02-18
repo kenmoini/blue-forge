@@ -1,0 +1,14 @@
+[Unit]
+Description=code-server
+
+[Service]
+Restart=always
+User=student{{ hostvars[inventory_hostname].ansible_student_number }}
+Group=student{{ hostvars[inventory_hostname].ansible_student_number }}
+ExecStartPre=/usr/bin/podman pod rm code-server-deployment-pod-0 -f -i
+ExecStart=/usr/bin/podman play kube /opt/code-server/code-server.yml
+ExecStop=/usr/bin/podman pod rm code-server-deployment-pod-0 -f -i
+Type=forking
+
+[Install]
+WantedBy=multi-user.target

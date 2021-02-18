@@ -14,12 +14,15 @@
       - workshop_vsi
       - internal_workshop_vsi
       - ext_workshop_vsi
+      - student{{ student_num }}_vsi
+      - student{{ student_num }}_node_vsi
     ansible_user: root
     ansible_ssh_user: root
     ansible_ssh_extra_args: -o StrictHostKeyChecking=no
     ansible_ssh_private_key_file: "{{ generation_directory }}/id_ssh_rsa"
     ansible_set_fqdn: "student{{ student_num }}-node{{ node_count }}.{{ guid }}.{{ domain }}"
     ansible_set_hostname: "student{{ student_num }}-node{{ node_count }}"
+    ansible_student_number: "{{ student_num }}"
     ansible_external_ip: "{{ tfstate | community.general.json_query(fip_filter) | first }}"
     ansible_internal_ip: "{{ tfstate | community.general.json_query(name_filter) | community.general.json_query(vsi_filter) | first }}"
     tfile_dir: "{{ tfile_dir }}"

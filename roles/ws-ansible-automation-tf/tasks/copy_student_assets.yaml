@@ -1,0 +1,51 @@
+---
+
+- name: Create .ssh folders on all student Nodes
+  file:
+    path: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.ssh"
+    state: directory
+    mode: 0700
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+
+- name: Create .ansible folders on all student Nodes
+  file:
+    path: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.ansible"
+    state: directory
+    mode: 0700
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+
+- name: Copy over student SSH keys to nodes
+  copy:
+    src: "{{ generation_directory }}/keys/student{{ hostvars[inventory_hostname].ansible_student_number }}_id_ssh_rsa"
+    dest: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.ssh/id_rsa"
+    mode: 0600
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+
+- name: Copy over pub key to student nodes
+  copy:
+    src: "{{ generation_directory }}/keys/student{{ hostvars[inventory_hostname].ansible_student_number }}_authorized_keys"
+    dest: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.ssh/authorized_keys"
+    mode: 0600
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+
+- name: Generate Student Ansible Inventory on Tower node
+  template:
+    src: per_student_inventory.j2
+    dest: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.ansible/inventory"
+    mode: 0644
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+  vars:
+    student_num: "{{ hostvars[inventory_hostname].ansible_student_number }}"
+
+- name: Place local user ansible config
+  template:
+    src: ansible.cfg.j2
+    dest: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.ansible.cfg"
+    mode: 0644
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"

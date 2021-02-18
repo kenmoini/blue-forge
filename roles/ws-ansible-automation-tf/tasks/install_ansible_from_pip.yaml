@@ -1,0 +1,17 @@
+---
+- name: Install Ansible from PIP3
+  pip:
+    name:
+      - ansible-base
+      - argcomplete
+    executable: pip3
+    state: present
+
+- name: Copy over auto compelte script script
+  copy:
+    src: files/ansible_auto_complete.sh
+    dest: /opt/ansible_auto_complete.sh
+    mode: 0755
+
+- name: Define ansible autocompletion scripts
+  command: /opt/ansible_auto_complete.sh

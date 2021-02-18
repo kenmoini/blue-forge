@@ -46,6 +46,7 @@ base_install_packages:
   - bash-completion
   - python3
   - python3-pip
+  - podman
 
 student_node_tcp_port_rules:
   - start: 22
@@ -97,6 +98,11 @@ student_tower_node_tcp_port_rules:
     direction: inbound
     remote: 0.0.0.0/0
     name: tcp_stn_APIIn
+  - start: 8443
+    end: 8443
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_stn_CodeServerIn
   - start: 9090
     end: 9090
     direction: inbound
@@ -109,6 +115,11 @@ student_tower_node_udp_port_rules:
     direction: inbound
     remote: 0.0.0.0/0
     name: udp_stn_CockpitIn
+  - start: 8443
+    end: 8443
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: udp_stn_CodeServerIn
 
 proctor_bastion_tcp_port_rules:
   - start: 22

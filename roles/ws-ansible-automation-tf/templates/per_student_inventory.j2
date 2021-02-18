@@ -1,0 +1,15 @@
+[all:children]
+tower
+nodes
+
+[tower]
+student{{ student_num }}-tower
+
+[nodes]
+{% for n in range(student_node_count) %}
+student{{ student_num }}-node{{ (n+1) }}
+{% endfor %}
+
+[all:vars]
+ansible_user=student{{ student_num }}
+ansible_ssh_private_key_file=/home/student{{ student_num }}/.ssh/id_rsa

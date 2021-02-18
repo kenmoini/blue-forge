@@ -1,0 +1,19 @@
+---
+- name: Create student key directory
+  file:
+    path: "{{ generation_directory }}/keys"
+    state: directory
+
+- name: Bake up Student SSH Keys locally
+  community.crypto.openssh_keypair:
+    path: "{{ generation_directory }}/keys/student{{ item }}_id_ssh_rsa"
+    size: 2048
+    type: rsa
+  with_sequence: start=0 end="{{ student_count }}" stride=1
+  register: student_priv_key
+
+- name: Bake up Student Authorized Key files
+  ansible.builtin.copy:
+    content: "{{ item.public_key }}"
+    dest: "{{ generation_directory }}/keys/student{{ item.item }}_authorized_keys"
+  with_items: "{{ student_priv_key.results }}"

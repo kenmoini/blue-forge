@@ -55,3 +55,13 @@
     validate_certs: false
   tags:
     - tower_license
+
+# y tho
+#- name: Copy over auto complete script script
+#  copy:
+#    src: files/ansible_auto_complete.sh
+#    dest: /opt/ansible_auto_complete.sh
+#    mode: 0755
+#
+#- name: Generate ansible autocompletion scripts
+#  command: /opt/ansible_auto_complete.sh

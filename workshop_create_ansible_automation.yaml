@@ -24,6 +24,13 @@
       tags:
         - build_infra
 
+    - name: Build Student SSH Keys
+      include_role:
+        name: ws-ansible-automation-tf
+        tasks_from: generate_student_ssh_keys
+      tags:
+        - generate_student_keys
+
     - name: Template out Zones YAML file
       include_role:
         name: ws-ansible-automation-tf
@@ -94,6 +101,13 @@
         tasks_from: global_configuration
       tags:
         - node_global_configuration
+# y tho?
+#    - name: Install Ansible Engine
+#      include_role:
+#        name: ws-ansible-automation-tf
+#        tasks_from: install_ansible_from_pip
+#      tags:
+#        - node_install_ansible
 
 - name: Connect to new Tower VSIs install RH Ansible Tower
   hosts:
@@ -211,9 +225,46 @@
     - ansible.posix
   gather_facts: true
   tasks:
+
     - name: Install Ansible Tower
       include_role:
         name: ws-ansible-automation-tf
         tasks_from: install_tower
       tags:
         - install_tower
+
+    - name: Configure FirewallD for code server
+      include_role:
+        name: kenmoini.firewalld
+      tags:
+        - code_server
+        - firewalld
+      vars:
+        force_restart_of_firewalld: true
+        firewalld_ports:
+          - 8443/tcp
+          - 8443/udp
+
+    - name: Deploy Code Server
+      include_role:
+        name: ws-ansible-automation-tf
+        tasks_from: code_server_native
+      tags:
+        - code_server
+
+- name: Connect to Student Ansible VSIs and configure ssh keys
+  hosts:
+    - student_tower_vsi
+    - student_node_vsi
+  collections:
+    - ansible.posix
+    - community.crypto
+    - community.general
+  gather_facts: true
+  tasks:
+    - name: Copy assets to student nodes
+      include_role:
+        name: ws-ansible-automation-tf
+        tasks_from: copy_student_assets
+      tags:
+        - copy_student_assets

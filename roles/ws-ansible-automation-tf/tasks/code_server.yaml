@@ -1,0 +1,48 @@
+---
+- name: Make code-server directory
+  file:
+    path: /opt/code-server
+    state: directory
+
+- name: Template out the code-server deployment
+  template:
+    src: Dockerfile.code-server.j2
+    dest: /opt/code-server/Dockerfile
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+
+- name: Template out the Dockerfile
+  template:
+    src: code-server.yml.j2
+    dest: /opt/code-server/code-server.yml
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+
+- name: Template out the Service
+  template:
+    src: code-server.service.j2
+    dest: /etc/systemd/system/code-server.service
+    owner: root
+    group: root
+
+- name: Install podman
+  dnf:
+    name: podman
+    state: latest
+
+- name: Run the container build
+  podman_image:
+    name: code-server
+    path: /opt/code-server
+    build:
+      format: docker
+  become: yes
+  become_method: su
+  become_user: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+  become_flags: "-l"
+
+- name: Start code-server service
+  ansible.builtin.systemd:
+    state: started
+    daemon_reload: yes
+    name: code-server
