@@ -35,7 +35,7 @@
 - name: Generate Student Ansible Inventory on Tower node
   template:
     src: per_student_inventory.j2
-    dest: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/.ansible/inventory"
+    dest: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/workshop/inventory"
     mode: 0644
     owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
     group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
