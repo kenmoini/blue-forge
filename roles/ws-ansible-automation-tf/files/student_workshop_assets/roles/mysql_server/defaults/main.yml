@@ -1,0 +1,11 @@
+---
+# defaults file for mysql_server
+install_packages:
+  - "@mysql"
+  - python3-PyMySQL
+  - mysql-server
+  - mysql
+
+new_db_name: "myDatabase"
+new_db_user: myDBU
+#new_db_password: Passw0rd1!

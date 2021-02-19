@@ -1,0 +1,20 @@
+---
+- name: Deploy Apache web server
+  hosts: web
+  become: yes
+  vars:
+    web_message: This is my web server - welcome!
+  tasks:
+  - name: Ensure latest Apache web server is installed
+    yum:
+      name: httpd
+      state: latest
+  - name: Enable and start Apache service
+    service:
+      name: httpd
+      enabled: true
+      state: started
+  - name: Template over index.html
+    template:
+      src: templates/index.html.j2
+      dest: /var/www/html/index.html

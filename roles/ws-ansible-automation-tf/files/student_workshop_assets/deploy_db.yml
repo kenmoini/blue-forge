@@ -1,0 +1,39 @@
+---
+- name: Deploy a mySQL Database
+  hosts: db
+  become: true
+  gather_facts: yes
+
+  vars:
+    new_db_name: myDatabase
+    new_db_user: myDBU
+
+  tasks:
+    - name: Update system
+      include_role:
+        name: linux_update
+      tags:
+        - update_system
+      when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+    - name: Deploy mySQL Server
+      block:
+        - name: Start mysql_server role
+          include_role:
+            name: mysql_server
+      rescue:
+        - name: Remove the mySQL Server software
+          dnf:
+            name: "@mysql"
+            state: absent
+      ignore_errors: yes
+      tags:
+        - deploy_mysql_server
+
+    - name: Force remove the mySQL Server software
+      dnf:
+        name: "mysql"
+        state: absent
+      tags:
+        - never
+        - remove_mysql_server

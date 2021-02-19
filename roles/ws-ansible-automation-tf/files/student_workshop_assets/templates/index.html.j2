@@ -1,0 +1,17 @@
+<!doctype html><html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hello!</title>
+  <style type="text/javascript">
+    body {
+      padding:2rem;
+      text-align:center;
+    }
+  </style>
+</head>
+
+<body>
+  <p>{{ web_message }}</p>
+  <p>The default IPv4 address of {{ ansible_fqdn }} is {{ ansible_default_ipv4.address }}</p>
+</body>
+</html>

@@ -1,0 +1,10 @@
+---
+- name: Perform a rolling update across hosts one-at-a-time in a cluster
+  hosts: all
+  become: true
+  serial: 1
+  tasks:
+  - name: Update system software
+    yum:
+      name: '*'
+      state: latest

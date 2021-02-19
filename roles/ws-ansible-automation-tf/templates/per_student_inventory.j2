@@ -1,14 +1,25 @@
 [all:children]
 tower
 nodes
+db
+container
 
 [tower]
 student{{ student_num }}-tower
 
 [nodes]
-{% for n in range(student_node_count) %}
-student{{ student_num }}-node{{ (n+1) }}
-{% endfor %}
+student{{ student_num }}-node1
+student{{ student_num }}-node2
+student{{ student_num }}-node3
+
+[web]
+student{{ student_num }}-node1
+
+[db]
+student{{ student_num }}-node2
+
+[container]
+student{{ student_num }}-node3
 
 [all:vars]
 ansible_user=student{{ student_num }}

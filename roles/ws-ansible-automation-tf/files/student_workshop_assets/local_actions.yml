@@ -1,0 +1,25 @@
+---
+- name: Get the local user
+  hosts: localhost
+  connection: local
+  tasks:
+  - name: Get local user
+    command: whoami
+    register: whoisit
+
+  - name: Who are we?
+    debug:
+      msg: "{{ whoisit.stdout }}"
+
+- name: Check remote nodes to see if we have the same user available
+  hosts: web
+  tasks:
+  - name: Check to see if the user exists
+    command: id -u "{{ hostvars['localhost']['whoisit'].stdout }}"
+    when: hostvars['localhost']['whoisit'] is defined
+    ignore_errors: yes
+    register: user_check
+
+  - name: Print user results
+    debug:
+      msg: "Found user with ID: {{ user_check }}"

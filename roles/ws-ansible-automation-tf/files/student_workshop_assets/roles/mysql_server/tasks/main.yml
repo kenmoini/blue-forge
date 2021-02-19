@@ -1,0 +1,43 @@
+---
+# tasks file for mysql_server
+- name: Install mySQL 8
+  dnf:
+    name: "{{ install_packages }}"
+    state: latest
+
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: Permit traffic for mySQL Server when firewallD is enabled
+  ansible.posix.firewalld:
+    port: 3306/tcp
+    permanent: yes
+    state: enabled
+  when: ansible_facts.services['firewalld.service'].status == "enabled"
+
+- name: Start mySQL service
+  service:
+    name: mysqld
+    state: started
+    enabled: yes
+
+- name: Create a new database
+  community.mysql.mysql_db:
+    name: "{{ new_db_name }}"
+    state: present
+  when: new_db_name is defined
+
+- name: Removes all anonymous user accounts
+  community.mysql.mysql_user:
+    name: ''
+    host_all: yes
+    state: absent
+
+- name: Create database user
+  community.mysql.mysql_user:
+    name: "{{ new_db_user }}"
+    password: "{{ new_db_password }}"
+    priv: '*.*:ALL'
+    state: present
+    encrypted: no
+  when: new_db_user is defined

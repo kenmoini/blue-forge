@@ -33,6 +33,15 @@
     owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
     group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
 
+- name: Transfer workshop quickstart items
+  copy:
+    src: files/student_workshop_assets/
+    dest: "/home/student{{ hostvars[inventory_hostname].ansible_student_number }}/workshop/"
+    mode: 0644
+    owner: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+    group: "student{{ hostvars[inventory_hostname].ansible_student_number }}"
+  when: "'student_node_vsi' not in group_names"
+
 - name: Generate Student Ansible Inventory on Tower node
   template:
     src: per_student_inventory.j2

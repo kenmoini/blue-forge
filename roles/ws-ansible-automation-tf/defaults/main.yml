@@ -16,7 +16,7 @@ student_username_suffix:
 student_password: noPrizeFor5thBestCloud
 
 student_count: 2
-student_node_count: 1
+student_node_count: 3
 
 student_vsi_node_profile: cx2-2x4
 student_vsi_tower_node_profile: bx2-2x8
@@ -59,6 +59,11 @@ student_node_tcp_port_rules:
     direction: inbound
     remote: 0.0.0.0/0
     name: tcp_sn_HTTPIn
+  - start: 8080
+    end: 8080
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: tcp_sn_HTTPXtrIn
   - start: 443
     end: 443
     direction: inbound
@@ -71,6 +76,11 @@ student_node_tcp_port_rules:
     name: tcp_sn_CockpitIn
 
 student_node_udp_port_rules:
+  - start: 8080
+    end: 8080
+    direction: inbound
+    remote: 0.0.0.0/0
+    name: udp_sn_HTTPXtrIn
   - start: 9090
     end: 9090
     direction: inbound
